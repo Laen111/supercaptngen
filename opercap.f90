@@ -413,3 +413,193 @@ subroutine populate_array(val, couple, isospin)
     ! set the value picked in the slot chosen
     coupling_Array(cpl,iso) = val
 end subroutine populate_array
+
+! designed to calculate the scattering from supernovae on dark matter
+subroutine supercaptn(mx_in, jx_in, niso, scattered)
+    use opermod
+    implicit none
+    integer, intent(in):: niso
+    integer ri, eli, limit
+    double precision, intent(in) :: mx_in, jx_in
+    double precision :: scattered !this is the output
+    double precision :: a, muminus, umax, umin, vesc, result
+    double precision :: epsabs, epsrel, abserr, neval !for integrator
+    double precision :: ier,alist,blist,rlist,elist,iord,last !for integrator
+    double precision, allocatable :: u_int_res(:)
+
+    ! specific to captn_oper
+    integer :: funcType, tau, taup, term_R, term_W, q_pow, w_pow ! loop indicies
+    integer :: q_functype, q_index
+    double precision :: J, j_chi, RFuncConst, WFuncConst, mu_T, prefactor_functype, factor_final, prefactor_current
+    double precision :: RD, RM, RMP2, RP1, RP2, RS1, RS1D, RS2 !R functions stored in their own source files
+    double precision :: prefactor_array(niso,11,2)
+
+    dimension alist(1000),blist(1000),elist(1000),iord(1000),rlist(1000)!for integrator
+    external integrand_oper
+    external integrand_oper_extrawterm
+
+    epsabs=1.d-6
+    epsrel=1.d-6
+    limit=1000
+
+    mdm = mx_in
+    j_chi = jx_in
+    
+    if (.not. allocated(tab_r)) then 
+        stop "Errorface of errors: you haven't called captn_init to load the solar model!"
+    end if
+    allocate(u_int_res(nlines))
+
+    do eli = 1, niso
+        do q_pow = 1, 11
+            do w_pow = 1, 2
+                prefactor_array(eli,q_pow,w_pow) = 0.d0
+            end do
+        end do
+    end do
+
+    ! First I set the entries in prefactor_array(niso,11,2)
+    ! These are the constants that mulitply the corresonding integral evaluation
+    do eli=1,niso !isotopeChosen, isotopeChosen
+        ! I'll need mu_T to include in the prefactor when there is a v^2 term
+        a = AtomicNumber_oper(eli)
+        mu_T = (mnuc*a*mdm)/(mnuc*a+mdm)
+
+        ! the current response function type in order: M, S2, S1, P2, MP2, P1, D, S1D
+        do funcType = 1,8
+
+            ! contribution to q^2 count from sum over function types
+            q_functype = 0
+            prefactor_functype = 1.
+            if ( functype.gt.3 ) then
+                q_functype = 1
+                prefactor_functype = 1./mnuc**2
+            end if
+
+            ! the first index on each response function
+            do tau=1,2
+
+                ! the second index on each response function
+                do taup=1,2
+
+                    ! the possible y-terms for each W function in order: y^0, y^1, y^2, y^3, y^4, y^5, y^6
+                    do term_W = 1,7
+                        
+                        WFuncConst = W_array(funcType,eli,tau,taup,term_W)
+
+                        ! skip if the result gets multiplied by zero in the WFunction
+                        if (WFuncConst.ne.0.) then
+
+                            ! the possible terms for each R function in order: c, v2, q2, v2q2, q4, v2q4
+                            do term_R = 1,6
+
+                                ! pick out the appropriate term's constant from a given R function of tau, taup, and term_R
+                                ! currently passes mnuc, and c0 - these are constants that could be shared to it through the shared module?
+                                select case (funcType)
+                                case (1)
+                                    RFuncConst = RM(mnuc,c0,tau,taup,term_R-1,j_chi,coupling_Array) !!!!!!!!!!!!!!! in the R functions the R term starts at zero, should change it to start at 1 like other Fortran things do for consistency
+                                case (2)
+                                    RFuncConst = RS2(mnuc,c0,tau,taup,term_R-1,j_chi,coupling_Array)
+                                case (3)
+                                    RFuncConst = RS1(mnuc,c0,tau,taup,term_R-1,j_chi,coupling_Array)
+                                case (4)
+                                    RFuncConst = RP2(mnuc,tau,taup,term_R-1,j_chi,coupling_Array)
+                                case (5)
+                                    RFuncConst = RMP2(mnuc,tau,taup,term_R-1,j_chi,coupling_Array)
+                                case (6)
+                                    RFuncConst = RP1(mnuc,tau,taup,term_R-1,j_chi,coupling_Array)
+                                case (7)
+                                    RFuncConst = RD(mnuc,tau,taup,term_R-1,j_chi,coupling_Array)
+                                case (8)
+                                    RFuncConst = RS1D(tau,taup,term_R-1,j_chi,coupling_Array)
+                                case default
+                                    RFuncConst = 0.
+                                    print*, "Um, I ran out of R functions to choose from?"
+                                end select
+
+                                ! skip if the result gets multiplied by zero in the RFunction
+                                if (RFuncConst.ne.0.) then
+
+                                    ! calculates the total number of q^2
+                                    q_index = 1 + q_functype + term_W - 1 + floor((term_R-1.)/2.)
+                                    prefactor_current = prefactor_functype*RFuncConst*WFuncConst*yConverse_array(eli)**(term_W-1)
+
+                                    ! check if term_R is even (in my index convention this corresponds to it having a v^2 in the term)
+                                    ! v^2 = w^2 - q^2/(2mu_T)^2
+                                    if ( mod(term_R,2).eq.0 ) then
+                                        ! this is the -q^2/(2mu_T)^2 contribution
+                                        ! it has one extra q^2 contribution compared to the current W & R function contributions
+                                        prefactor_array(eli,q_index+1,1) = prefactor_array(eli,q_index+1,1) - prefactor_current * &
+                                            (c0**2/(4.*mu_T**2)) ! The Rfunctions are programmed with the 1/c0^2 in their v_perp^2 term (so I need to un-correct it for the- q^2/(2*mu_T)^2, and leave it be for the w^2/c^2)
+                                        ! this is the +w^2 contribution
+                                        ! it has the same q^2 contribution, but has a v_perp^2 contribution
+                                        prefactor_array(eli,q_index,2) = prefactor_array(eli,q_index,2) + prefactor_current
+                                        
+                                    else
+                                        prefactor_array(eli,q_index,1) = prefactor_array(eli,q_index,1) + prefactor_current
+
+                                    end if
+                                end if
+                            end do !term_R
+                        end if
+                    end do !term_W
+                end do !taup
+            end do !tau
+        end do !functype
+    end do !eli
+
+    ! now with all the prefactors computed, any 0.d0 entries in prefactor_array means that we can skip that integral evaluation!
+    scattered = 0.d0
+    umin = 0.d0
+    ! do ri=1,nlines
+    !     vesc = tab_vesc(ri)
+    !     rindex_shared = ri !make accessible via the module, used to get vesc value (and calculate w velocity) in integrand
+    !     vesc_shared_arr(ri) = vesc !make accessible via the module
+
+    do eli=1,niso !isotopeChosen, isotopeChosen
+        u_int_res(ri) = 0.d0
+        a = AtomicNumber_oper(eli)
+        a_shared = a !make accessible via the module
+
+        mu = mdm/(mnuc*a)
+        muplus = (1.+mu)/2.
+        muminus = (mu-1.d0)/2.
+
+        J = AtomicSpin_oper(eli)
+
+        ! Chop the top of the integral off at the smaller of the halo escape velocity or the minimum velocity required for capture.
+        umax = min(vesc * sqrt(mu)/abs(muminus), vesc_halo)
+
+        do w_pow=1,2
+            ! toggles whether we integrate with the w^2 term on
+            w_shared = .false.
+            if(w_pow.eq.2) then
+                w_shared = .true.
+            end if
+
+            do q_pow=1,11
+                if ( prefactor_array(eli,q_pow,w_pow).ne.0. ) then
+                    result = 0.d0
+                    q_shared = q_pow - 1
+                    !Call integrator
+                    call dsntdqagse(integrand_oper,vdist_over_u,umin,umax, &
+                        epsabs,epsrel,limit,result,abserr,neval,ier,alist,blist,rlist,elist,iord,last)
+
+                    u_int_res(ri) = u_int_res(ri) + result * prefactor_array(eli,q_pow,w_pow)
+                end if
+            end do !q_pow
+        end do !w_pow
+
+        factor_final = (2*mnuc*a)/(2*J+1) * NAvo*tab_starrho(ri)*tab_mfr_oper(ri,eli)/(mnuc*a) * &
+            tab_r(ri)**2*tab_dr(ri) * (hbar*c0)**2
+        scattered = scattered + u_int_res(ri) * factor_final
+    end do !eli
+    ! end do !ri
+
+    ! capped = 4.d0*pi*Rsun**3*capped
+
+    ! if (capped .gt. 1.d100) then
+    !   print*,"Capt'n General says: Oh my, it looks like you are capturing an", &
+    !     "infinite amount of dark matter in the Sun. Best to look into that."
+    ! end if
+end subroutine supercaptn
