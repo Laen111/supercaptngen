@@ -21,6 +21,7 @@ module opermod
                                                         0., 0., 0., 0., 0., 0./) !spins pulled from https://physics.nist.gov/PhysRefData/Handbook/element_name.htm
     double precision :: coupling_Array(14,2)
     double precision :: W_array(8,16,2,2,7)
+    double precision :: W_array_super(8,8,2,2,7)
     double precision :: yConverse_array(16)
 
     integer :: q_shared
@@ -603,3 +604,76 @@ subroutine supercaptn(mx_in, jx_in, niso, scattered)
     !     "infinite amount of dark matter in the Sun. Best to look into that."
     ! end if
 end subroutine supercaptn
+
+subroutine supercaptn_init()
+    use opermod
+    implicit none
+    integer :: i, j, k, l, m
+    character (len=2) :: terms(7) = [character(len=2) :: "y0", "y1", "y2", "y3", "y4", "y5", "y6"]
+    real :: WM, WS2, WS1, WP2, WMP2, WP1, WD, WS1D
+    
+    ! mass fraction is given by MassFrac_super, from SNe sims
+    
+    ! ! tab_mfr_oper is allocated in the get_solar_params subroutine
+    ! ! take the regular array tab_mfr and extract the isotopes used in the 1501.03729 paper (otherwise indices won't match on arrays)
+    ! do i=1,nlines
+    !     tab_mfr_oper(i,1) = tab_mfr(i,1)
+    !     tab_mfr_oper(i,2) = tab_mfr(i,3)
+    !     tab_mfr_oper(i,3) = tab_mfr(i,2)
+    !     tab_mfr_oper(i,4) = tab_mfr(i,4)
+    !     tab_mfr_oper(i,5) = tab_mfr(i,6)
+    !     tab_mfr_oper(i,6) = tab_mfr(i,8)
+    !     tab_mfr_oper(i,7) = tab_mfr(i,11)
+    !     tab_mfr_oper(i,8) = tab_mfr(i,12)
+    !     tab_mfr_oper(i,9) = tab_mfr(i,13)
+    !     tab_mfr_oper(i,10) = tab_mfr(i,14)
+    !     tab_mfr_oper(i,11) = tab_mfr(i,15)
+    !     tab_mfr_oper(i,12) = tab_mfr(i,17)
+    !     tab_mfr_oper(i,13) = tab_mfr(i,19)
+    !     tab_mfr_oper(i,14) = tab_mfr(i,21)
+    !     tab_mfr_oper(i,15) = tab_mfr(i,27)
+    !     tab_mfr_oper(i,16) = tab_mfr(i,29)
+    ! end do
+    
+    ! this array stores each of the constants of the W polynomials from paper 1501.03729's appendix individually
+    ! array index m handles the 8 varients of the W functions in order [M, S", S', P", MP", P', Delta, S'Delta]
+    ! index i handles the 16 isotopes [H, He3, He4, C12, N14, O16, Ne20, Na 23, Mg24, Al27, Si28, S32, Ar40, Ca40, Fe56, Ni58]
+    ! index j & k handle the two superscripts for each W function, each taking values of 0 and 1
+    ! index L determines the power of each constant ranging from y^0 to y^6
+    do m=1,8
+        do i=1,8
+            do j=1,2
+                do k=1,2
+                    do l=1,7
+                        if (m.eq.1) then
+                            W_array_super(m,i,j,k,l) = WM(j-1,k-1,isotopes_super(i),terms(l))
+                        else if (m.eq.2) then
+                            W_array_super(m,i,j,k,l) = WS2(j-1,k-1,isotopes_super(i),terms(l))
+                        else if (m.eq.3) then
+                            W_array_super(m,i,j,k,l) = WS1(j-1,k-1,isotopes_super(i),terms(l))
+                        else if (m.eq.4) then
+                            W_array_super(m,i,j,k,l) = WP2(j-1,k-1,isotopes_super(i),terms(l))
+                        else if (m.eq.5) then
+                            W_array_super(m,i,j,k,l) = WMP2(j-1,k-1,isotopes_super(i),terms(l))
+                        else if (m.eq.6) then
+                            W_array_super(m,i,j,k,l) = WP1(j-1,k-1,isotopes_super(i),terms(l))
+                        else if (m.eq.7) then
+                            W_array_super(m,i,j,k,l) = WD(j-1,k-1,isotopes_super(i),terms(l))
+                        else
+                            W_array_super(m,i,j,k,l) = WS1D(j-1,k-1,isotopes_super(i),terms(l))
+                        end if
+                    end do
+                end do
+            end do
+        end do
+    end do
+
+    ! initiate the coupling_Array (full of the coupling constants) with all zeros
+    ! populate_array will place the non-zero value into a chosen slot at runtime
+    coupling_Array = reshape((/0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, &
+                                0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0/), (/14, 2/))
+
+    do i = 1, 8
+        yConverse_array_super(i) = 264.114/(45.d0*AtomicNumber_super(i)**(-1./3.)-25.d0*AtomicNumber_super(i)**(-2./3.))
+    end do
+end subroutine supercaptn_init
