@@ -448,7 +448,7 @@ subroutine supercaptn(mx_in, jx_in, niso, scattered)
     double precision :: a, muminus, umax, umin, vesc, result
     double precision :: epsabs, epsrel, abserr, neval !for integrator
     double precision :: ier,alist,blist,rlist,elist,iord,last !for integrator
-    double precision, allocatable :: u_int_res(:)
+    double precision :: int_res
 
     ! specific to captn_oper
     integer :: funcType, tau, taup, term_R, term_W, q_pow, w_pow ! loop indicies
@@ -471,7 +471,7 @@ subroutine supercaptn(mx_in, jx_in, niso, scattered)
     if (.not. allocated(tab_r)) then 
         stop "Errorface of errors: you haven't called captn_init to load the solar model!"
     end if
-    allocate(u_int_res(nlines))
+    ! allocate(u_int_res(nlines))
 
     do eli = 1, niso
         do q_pow = 1, 11
@@ -485,7 +485,7 @@ subroutine supercaptn(mx_in, jx_in, niso, scattered)
     ! These are the constants that mulitply the corresonding integral evaluation
     do eli=1,niso !isotopeChosen, isotopeChosen
         ! I'll need mu_T to include in the prefactor when there is a v^2 term
-        a = AtomicNumber_oper(eli)
+        a = AtomicNumber_super(eli)
         mu_T = (mnuc*a*mdm)/(mnuc*a+mdm)
 
         ! the current response function type in order: M, S2, S1, P2, MP2, P1, D, S1D
@@ -508,7 +508,7 @@ subroutine supercaptn(mx_in, jx_in, niso, scattered)
                     ! the possible y-terms for each W function in order: y^0, y^1, y^2, y^3, y^4, y^5, y^6
                     do term_W = 1,7
                         
-                        WFuncConst = W_array(funcType,eli,tau,taup,term_W)
+                        WFuncConst = W_array_super(funcType,eli,tau,taup,term_W)
 
                         ! skip if the result gets multiplied by zero in the WFunction
                         if (WFuncConst.ne.0.) then
@@ -536,8 +536,7 @@ subroutine supercaptn(mx_in, jx_in, niso, scattered)
                                 case (8)
                                     RFuncConst = RS1D(tau,taup,term_R-1,j_chi,coupling_Array)
                                 case default
-                                    RFuncConst = 0.
-                                    print*, "Um, I ran out of R functions to choose from?"
+                                    stop "Um, I ran out of R functions to choose from?"
                                 end select
 
                                 ! skip if the result gets multiplied by zero in the RFunction
@@ -545,7 +544,7 @@ subroutine supercaptn(mx_in, jx_in, niso, scattered)
 
                                     ! calculates the total number of q^2
                                     q_index = 1 + q_functype + term_W - 1 + floor((term_R-1.)/2.)
-                                    prefactor_current = prefactor_functype*RFuncConst*WFuncConst*yConverse_array(eli)**(term_W-1)
+                                    prefactor_current = prefactor_functype*RFuncConst*WFuncConst*yConverse_array_super(eli)**(term_W-1)
 
                                     ! check if term_R is even (in my index convention this corresponds to it having a v^2 in the term)
                                     ! v^2 = w^2 - q^2/(2mu_T)^2
@@ -580,16 +579,17 @@ subroutine supercaptn(mx_in, jx_in, niso, scattered)
     !     vesc_shared_arr(ri) = vesc !make accessible via the module
 
     do eli=1,niso !isotopeChosen, isotopeChosen
-        u_int_res(ri) = 0.d0
-        a = AtomicNumber_oper(eli)
+        int_res = 0.d0
+        a = AtomicNumber_super(eli)
         a_shared = a !make accessible via the module
 
         mu = mdm/(mnuc*a)
         muplus = (1.+mu)/2.
         muminus = (mu-1.d0)/2.
 
-        J = AtomicSpin_oper(eli)
+        J = AtomicSpin_super(eli)
 
+        ! DO WE STILL NEED TO DO THIS CHOP FOR SNe?
         ! Chop the top of the integral off at the smaller of the halo escape velocity or the minimum velocity required for capture.
         umax = min(vesc * sqrt(mu)/abs(muminus), vesc_halo)
 
@@ -608,14 +608,15 @@ subroutine supercaptn(mx_in, jx_in, niso, scattered)
                     call dsntdqagse(integrand_oper,vdist_over_u,umin,umax, &
                         epsabs,epsrel,limit,result,abserr,neval,ier,alist,blist,rlist,elist,iord,last)
 
-                    u_int_res(ri) = u_int_res(ri) + result * prefactor_array(eli,q_pow,w_pow)
+                    int_res = int_res + result * prefactor_array(eli,q_pow,w_pow)
                 end if
             end do !q_pow
         end do !w_pow
 
+        ! CHECK THIS FOR UNITS AGAIN, IT PROBABLY NEEDS TO BE CHANGE TO GET PHI(v) OUT OF IT
         factor_final = (2*mnuc*a)/(2*J+1) * NAvo*tab_starrho(ri)*tab_mfr_oper(ri,eli)/(mnuc*a) * &
             tab_r(ri)**2*tab_dr(ri) * (hbar*c0)**2
-        scattered = scattered + u_int_res(ri) * factor_final
+        scattered = scattered + int_res * factor_final
     end do !eli
     ! end do !ri
 
