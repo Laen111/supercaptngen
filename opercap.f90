@@ -15,10 +15,30 @@ module opermod
     
     double precision, parameter :: AtomicNumber_oper(16) = (/ 1., 3., 4., 12., 14., 16., 20., 23., 24., 27., &
                                                         28., 32., 40., 40., 56., 58./) !the isotopes the catena paper uses
+    double precision, parameter :: AtomicNumber_super(8) = (/ 1., 4., 12., 20., 24., 28., 32., 56. /) !the isotopes the catena paper uses
     character (len=4) :: isotopes(16) = [character(len=4) :: "H","He3","He4","C12","N14","O16","Ne20","Na23","Mg24", &
                                                                 "Al27", "Si28","S32","Ar40","Ca40","Fe56","Ni58"] !the isotopes in text form to match against the W functions
+    character (len=4) :: isotopes_super(8) = [character(len=4) :: "H", "He4", "C12", "Ne20", "Mg24", "Si28", "S32", "Fe56"] !the isotopes in text form to match against the W functions
     double precision, parameter :: AtomicSpin_oper(16) = (/ 0.5, 0.5, 0., 0., 1., 0., 0., 1.5, 0., 2.5, &
                                                         0., 0., 0., 0., 0., 0./) !spins pulled from https://physics.nist.gov/PhysRefData/Handbook/element_name.htm
+    double precision, parameter :: AtomicSpin_super(8) = (/ 0.5, & ! {}^{1}\text{H}
+                                                            0., & ! {}^{4}\text{He}
+                                                            0., & ! {}^{12}\text{C}
+                                                            0., & ! {}^{20}\text{Ne}
+                                                            0., & ! {}^{24}\text{Mg}
+                                                            0., & ! {}^{28}\text{Si}
+                                                            0., & ! {}^{32}\text{S}
+                                                            0. & ! {}^{56}\text{Fe}
+                                                            /) !spins pulled from https://physics.nist.gov/PhysRefData/Handbook/element_name.htm
+    double precision, parameter :: MassFrac_super(8) = (/   0.493, & ! {}^{1}\text{H}
+                                                            0.35, & ! {}^{4}\text{He}
+                                                            0.015, & ! {}^{12}\text{C}
+                                                            0.005, & ! {}^{20}\text{Ne}
+                                                            0.005, & ! {}^{24}\text{Mg}
+                                                            0.02, & ! {}^{28}\text{Si}
+                                                            0.005, & ! {}^{32}\text{S}
+                                                            0.007 & ! {}^{56}\text{Fe}
+                                                            /) ! the isotopic abundances from Chris' notes, sourced from SNe sims: https://arxiv.org/abs/astro-ph/0112478
     double precision :: coupling_Array(14,2)
     double precision :: W_array(8,16,2,2,7)
     double precision :: yConverse_array(16)
