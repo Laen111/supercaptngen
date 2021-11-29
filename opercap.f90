@@ -7,20 +7,20 @@
 !   Sticking with notation of 1504.04378. Cite that paper. Or 1605.06502 it's even better.
 
 
-module opermod
+module supermod
     use sharedmod
     implicit none
     double precision, parameter :: hbar=6.582d-25 !GeV*s
     !this goes with the Serenelli table format
     
-    double precision, parameter :: AtomicNumber_oper(16) = (/ 1., 3., 4., 12., 14., 16., 20., 23., 24., 27., &
-                                                        28., 32., 40., 40., 56., 58./) !the isotopes the catena paper uses
+    ! double precision, parameter :: AtomicNumber_oper(16) = (/ 1., 3., 4., 12., 14., 16., 20., 23., 24., 27., &
+    !                                                     28., 32., 40., 40., 56., 58./) !the isotopes the catena paper uses
     double precision, parameter :: AtomicNumber_super(8) = (/ 1., 4., 12., 20., 24., 28., 32., 56. /) !the isotopes the catena paper uses
-    character (len=4) :: isotopes(16) = [character(len=4) :: "H","He3","He4","C12","N14","O16","Ne20","Na23","Mg24", &
-                                                                "Al27", "Si28","S32","Ar40","Ca40","Fe56","Ni58"] !the isotopes in text form to match against the W functions
+    ! character (len=4) :: isotopes(16) = [character(len=4) :: "H","He3","He4","C12","N14","O16","Ne20","Na23","Mg24", &
+    !                                                             "Al27", "Si28","S32","Ar40","Ca40","Fe56","Ni58"] !the isotopes in text form to match against the W functions
     character (len=4) :: isotopes_super(8) = [character(len=4) :: "H", "He4", "C12", "Ne20", "Mg24", "Si28", "S32", "Fe56"] !the isotopes in text form to match against the W functions
-    double precision, parameter :: AtomicSpin_oper(16) = (/ 0.5, 0.5, 0., 0., 1., 0., 0., 1.5, 0., 2.5, &
-                                                        0., 0., 0., 0., 0., 0./) !spins pulled from https://physics.nist.gov/PhysRefData/Handbook/element_name.htm
+    ! double precision, parameter :: AtomicSpin_oper(16) = (/ 0.5, 0.5, 0., 0., 1., 0., 0., 1.5, 0., 2.5, &
+    !                                                     0., 0., 0., 0., 0., 0./) !spins pulled from https://physics.nist.gov/PhysRefData/Handbook/element_name.htm
     double precision, parameter :: AtomicSpin_super(8) = (/ 0.5, & ! {}^{1}\text{H}
                                                             0., & ! {}^{4}\text{He}
                                                             0., & ! {}^{12}\text{C}
@@ -40,13 +40,17 @@ module opermod
                                                             0.007 & ! {}^{56}\text{Fe}
                                                             /) ! the isotopic abundances from Chris' notes, sourced from SNe sims: https://arxiv.org/abs/astro-ph/0112478
     double precision :: coupling_Array(14,2)
-    double precision :: W_array(8,16,2,2,7)
+    ! double precision :: W_array(8,16,2,2,7)
     double precision :: W_array_super(8,8,2,2,7)
-    double precision :: yConverse_array(16)
+    ! double precision :: yConverse_array(16)
+    double precision :: yConverse_array_super(8)
 
     integer :: q_shared
     logical :: w_shared
     
+    ! values shared by module, set by supercaptn_init
+    double precision :: usun, u0, rho0, vesc_halo
+
     contains
 
     ! having removed the scaling momentum, are the units off here? I'm looking at the p/c0 in particular
@@ -83,7 +87,7 @@ module opermod
                 - dgamic(1.+dble(mq),B*mu/muplus**2))
         end if
     end function GFFI_A_oper
-end module opermod
+end module supermod
 
 subroutine captn_init_oper()
     use opermod
@@ -374,10 +378,9 @@ subroutine captn_oper(mx_in, jx_in, niso, capped)!, isotopeChosen)
 end subroutine captn_oper
 
 subroutine populate_array(val, couple, isospin)
-    ! in the 1501.03729 paper, the non-zero values chosen were 1.65*10^-8 (represented as 1.65d-8 in the code)
+    ! in the arxiv:1501.03729 paper, the non-zero values chosen were 1.65*10^-8 (represented as 1.65d-8 in the code)
     ! I was trying to directly edit 'couple' and 'isospin' to use in the array indices, but Fortran was throwing segfaults when doing this
-    ! might want a way to quit out of subroutine early if error is reached
-    use opermod
+    use supermod
     implicit none
     integer :: couple, isospin
     double precision :: val
@@ -409,9 +412,34 @@ subroutine populate_array(val, couple, isospin)
     coupling_Array(cpl,iso) = val
 end subroutine populate_array
 
+! this is the integral over R in eqn 2.3 in arxiv:1501.03729
+! note that Omega there is expanded and broken into terms of the form: const. * q^2n * exp{E_R/E_i}
+! I've doen this so that I can tap into the GFFI functions in eqn 2.9 of arxiv:1504.04378
+! THIS IS THE IMPORTANT FUNCTION: the integrand for the integral over u
+function integrand_super(u, foveru)
+    use opermod
+    double precision :: u, w, integrand_oper, foveru !int, vesc
+    external foveru
+
+    ! vesc = tab_vesc(ri_for_omega)
+
+    w = sqrt(u**2+vesc_shared_arr(rindex_shared)**2)
+
+    !Switch depending on whether we are capturing on Hydrogen or not
+    if (a_shared .gt. 2.d0) then
+        integrand_oper = foveru(u)*GFFI_A_oper(w,vesc_shared_arr(rindex_shared),a_shared,q_shared)
+    else
+        integrand_oper = foveru(u)*GFFI_H_oper(w,vesc_shared_arr(rindex_shared),q_shared)
+    end if
+    if (w_shared) then
+        integrand_oper = integrand_oper * w**2
+    end if
+
+end function integrand_super
+
 ! designed to calculate the scattering from supernovae on dark matter
 subroutine supercaptn(mx_in, jx_in, niso, scattered)
-    use opermod
+    use supermod
     implicit none
     integer, intent(in):: niso
     integer ri, eli, limit
@@ -599,39 +627,30 @@ subroutine supercaptn(mx_in, jx_in, niso, scattered)
     ! end if
 end subroutine supercaptn
 
-subroutine supercaptn_init()
-    use opermod
+subroutine supercaptn_init(rho0_in, usun_in, u0_in, vesc_in, Mej_in, ISM_in)
+    ! input velocities in km/s, not cm/s!!!
+    use supermod
     implicit none
     integer :: i, j, k, l, m
     character (len=2) :: terms(7) = [character(len=2) :: "y0", "y1", "y2", "y3", "y4", "y5", "y6"]
     real :: WM, WS2, WS1, WP2, WMP2, WP1, WD, WS1D
     
+    double precision,intent(in) :: rho0_in,usun_in,u0_in,vesc_in
+    
+    ! load values into module
+    usun = usun_in*1.d5
+    u0 =  u0_in*1.d5
+    rho0 = rho0_in
+    vesc_halo = vesc_in*1.d5
+    Mej = Mej_in*1.98841d30 ! convert Solar Masses to kg
+    ISM = ISM_in ! loaded in cm^-3
+
     ! mass fraction is given by MassFrac_super, from SNe sims
+    ! it doesn't vary with a radial coordinate, so it is only a fixed frac per isotope
     
-    ! ! tab_mfr_oper is allocated in the get_solar_params subroutine
-    ! ! take the regular array tab_mfr and extract the isotopes used in the 1501.03729 paper (otherwise indices won't match on arrays)
-    ! do i=1,nlines
-    !     tab_mfr_oper(i,1) = tab_mfr(i,1)
-    !     tab_mfr_oper(i,2) = tab_mfr(i,3)
-    !     tab_mfr_oper(i,3) = tab_mfr(i,2)
-    !     tab_mfr_oper(i,4) = tab_mfr(i,4)
-    !     tab_mfr_oper(i,5) = tab_mfr(i,6)
-    !     tab_mfr_oper(i,6) = tab_mfr(i,8)
-    !     tab_mfr_oper(i,7) = tab_mfr(i,11)
-    !     tab_mfr_oper(i,8) = tab_mfr(i,12)
-    !     tab_mfr_oper(i,9) = tab_mfr(i,13)
-    !     tab_mfr_oper(i,10) = tab_mfr(i,14)
-    !     tab_mfr_oper(i,11) = tab_mfr(i,15)
-    !     tab_mfr_oper(i,12) = tab_mfr(i,17)
-    !     tab_mfr_oper(i,13) = tab_mfr(i,19)
-    !     tab_mfr_oper(i,14) = tab_mfr(i,21)
-    !     tab_mfr_oper(i,15) = tab_mfr(i,27)
-    !     tab_mfr_oper(i,16) = tab_mfr(i,29)
-    ! end do
-    
-    ! this array stores each of the constants of the W polynomials from paper 1501.03729's appendix individually
+    ! this array stores each of the constants of the W polynomials from paper arxiv:1501.03729's appendix individually
     ! array index m handles the 8 varients of the W functions in order [M, S", S', P", MP", P', Delta, S'Delta]
-    ! index i handles the 16 isotopes [H, He3, He4, C12, N14, O16, Ne20, Na 23, Mg24, Al27, Si28, S32, Ar40, Ca40, Fe56, Ni58]
+    ! index i handles the 8 isotopes [H, He4, C12, Ne20, Mg24, Si28, S32, Fe56]
     ! index j & k handle the two superscripts for each W function, each taking values of 0 and 1
     ! index L determines the power of each constant ranging from y^0 to y^6
     do m=1,8
@@ -671,3 +690,25 @@ subroutine supercaptn_init()
         yConverse_array_super(i) = 264.114/(45.d0*AtomicNumber_super(i)**(-1./3.)-25.d0*AtomicNumber_super(i)**(-2./3.))
     end do
 end subroutine supercaptn_init
+
+subroutine captn_init(solarmodel,rho0_in,usun_in,u0_in,vesc_in)
+    !input velocities in km/s, not cm/s!!!
+    use supermod
+    use iso_c_binding, only: c_ptr
+    implicit none
+    character (len=300) solarmodel
+    double precision,intent(in) :: rho0_in,usun_in,u0_in,vesc_in
+    !common solarmodel
+    !external solarmodel
+
+    if  (.not. allocated(tab_r)) then !
+        print*,"Capgen initializing from model: ",solarmodel
+        call get_solar_params(solarmodel,nlines)
+    end if
+
+    usun = usun_in*1.d5
+    u0 =  u0_in*1.d5
+    rho0 =rho0_in
+    vesc_halo = vesc_in*1.d5
+
+  end subroutine captn_init
