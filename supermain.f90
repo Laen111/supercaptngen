@@ -40,7 +40,7 @@
     print*
     print*, "Running Capt'n General..."
 
-    do j = 1,7
+    do j = 1,1
       print*
       print*, "Power: ", outfile(j)
 
@@ -71,7 +71,7 @@
    call captn_init_oper()
    num_isotopes = 16
    jx = 0.5
-   do cpl=1, 14
+   do cpl=1, 1
      filename = "oper_"//trim(cplConsts(cpl))//"_model.dat"
      open(55,file=filename)
      write(55,*) "DM_Mass | ", "  Captures | ", "  MaxCaptures"
