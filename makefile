@@ -20,7 +20,7 @@ WFUNC = WM.o WS2.o WS1.o WP2.o WMP2.o WP1.o WD.o WS1D.o
 RFUNC = RM.o RS2.o RS1.o RP2.o RMP2.o RP1.o RD.o RS1D.o
 
 
-gencaplib.so: $(SHAREDOBJ) $(GENOBJ) $(OPEROBJ) $(NUMFOBJ) $(QAG) $(WFUNC) $(RFUNC)
+gencaplib.so: $(SHAREDOBJ) $(GENOBJ) $(OPEROBJ) $(SUPEROBJ) $(NUMFOBJ) $(QAG) $(WFUNC) $(RFUNC)
 	$(FC) $(FOPT) -shared -o $@ $^
 
 # -L tells the linker where to look for shared libraries

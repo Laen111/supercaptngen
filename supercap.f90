@@ -44,8 +44,23 @@ module supermod
     
     ! values shared by module, set by supercaptn_init
     double precision :: usun, u0, rho0, vesc_halo
+    double precision :: Mej, ISM
 
     contains
+
+    !   this is the function f_sun(u) in 1504.04378 eqn 2.2 divided by u
+    !velocity distribution,
+    function vdist_over_u(u)
+        double precision :: u, vdist_over_u, normfact
+        vdist_over_u = (3./2.)**(3./2.)*4.*rho0*u/sqrt(pi)/mdm/u0**3 &
+        *exp(-3.*(usun**2+u**2)/(2.*u0**2))*sinh(3.*u*usun/u0**2)/(3.*u*usun/u0**2)
+        !normfact = .5*erf(sqrt(3./2.)*(vesc_halo-usun)/u0) + &
+        !.5*erf(sqrt(3./2.)*(vesc_halo+usun)/u0)+ u0/(sqrt(6.*pi)*usun) &
+        !*(exp(-3.*(usun+vesc_halo)/2./u0**2)-exp(-3.*(usun-vesc_halo)/2./u0**2))
+        normfact = 1.
+        !print*,normfact
+        vdist_over_u = vdist_over_u/normfact
+    end function vdist_over_u
 
     ! having removed the scaling momentum, are the units off here? I'm looking at the p/c0 in particular
     function GFFI_H_oper(w,vesc,mq)
@@ -84,7 +99,7 @@ module supermod
 end module supermod
 
 
-subroutine populate_array(val, couple, isospin)
+subroutine populate_array_super(val, couple, isospin)
     ! in the arxiv:1501.03729 paper, the non-zero values chosen were 1.65*10^-8 (represented as 1.65d-8 in the code)
     ! I was trying to directly edit 'couple' and 'isospin' to use in the array indices, but Fortran was throwing segfaults when doing this
     use supermod
@@ -117,7 +132,7 @@ subroutine populate_array(val, couple, isospin)
     ! val is the value you want to populate with
     ! set the value picked in the slot chosen
     coupling_Array(cpl,iso) = val
-end subroutine populate_array
+end subroutine populate_array_super
 
 ! this is the integral over R in eqn 2.3 in arxiv:1501.03729
 ! note that Omega there is expanded and broken into terms of the form: const. * q^2n * exp{E_R/E_i}
@@ -174,11 +189,6 @@ subroutine supercaptn(mx_in, jx_in, niso, scattered)
 
     mdm = mx_in
     j_chi = jx_in
-    
-    if (.not. allocated(tab_r)) then 
-        stop "Errorface of errors: you haven't called captn_init to load the solar model!"
-    end if
-    ! allocate(u_int_res(nlines))
 
     do eli = 1, niso
         do q_pow = 1, 11
@@ -251,7 +261,8 @@ subroutine supercaptn(mx_in, jx_in, niso, scattered)
 
                                     ! calculates the total number of q^2
                                     q_index = 1 + q_functype + term_W - 1 + floor((term_R-1.)/2.)
-                                    prefactor_current = prefactor_functype*RFuncConst*WFuncConst*yConverse_array_super(eli)**(term_W-1)
+                                    prefactor_current = prefactor_functype * RFuncConst * WFuncConst * &
+                                                            yConverse_array_super(eli)**(term_W-1)
 
                                     ! check if term_R is even (in my index convention this corresponds to it having a v^2 in the term)
                                     ! v^2 = w^2 - q^2/(2mu_T)^2
@@ -321,8 +332,8 @@ subroutine supercaptn(mx_in, jx_in, niso, scattered)
         end do !w_pow
 
         ! CHECK THIS FOR UNITS AGAIN, IT PROBABLY NEEDS TO BE CHANGE TO GET PHI(v) OUT OF IT
-        factor_final = (2*mnuc*a)/(2*J+1) * NAvo*tab_starrho(ri)*tab_mfr_oper(ri,eli)/(mnuc*a) * &
-            tab_r(ri)**2*tab_dr(ri) * (hbar*c0)**2
+        factor_final = 1.!(2*mnuc*a)/(2*J+1) * NAvo*tab_starrho(ri)*tab_mfr_oper(ri,eli)/(mnuc*a) * &
+            ! tab_r(ri)**2*tab_dr(ri) * (hbar*c0)**2
         scattered = scattered + int_res * factor_final
     end do !eli
     ! end do !ri
@@ -344,6 +355,7 @@ subroutine supercaptn_init(rho0_in, usun_in, u0_in, vesc_in, Mej_in, ISM_in)
     real :: WM, WS2, WS1, WP2, WMP2, WP1, WD, WS1D
     
     double precision,intent(in) :: rho0_in,usun_in,u0_in,vesc_in
+    double precision, intent(in) :: Mej_in, ISM_in
     
     ! load values into module
     usun = usun_in*1.d5
