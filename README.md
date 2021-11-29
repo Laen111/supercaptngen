@@ -1,10 +1,10 @@
-[![DOI](https://zenodo.org/badge/103404474.svg)](https://zenodo.org/badge/latestdoi/103404474)
-# captngen
+# supercaptngen
 
-Capt'n General: q- and v- dependent solar dark matter capture and energy transport routines
+Super Capt'n General: fork of [Capt'n General](https://github.com/aaronvincent/captngen), designed to handle supernovae boosting dark matter via scattering to above galactic escape velocities.
 
-Can be run in standalone mode, or as a library (via make gencaplib.so).
+Can be run in standalone mode, or as a library (via the default `make gencaplib.so`).
 
-See main.f90 for examples of how to call the executable, gencaplib.x
+Build for example standalone by calling `make gentest.x`.
+See main.f90 for examples of how to call the executable, `gentest.x`.
 
-If you use this code, you can cite https://arxiv.org/abs/2105.06810 and/or https://arxiv.org/abs/1808.10465 where it was first deployed.
+If you use this code, you can cite **_NOT USED YET_** where it was first deployed.
