@@ -66,5 +66,7 @@ $(RFUNC): %.o: $(RDIR)/%.f
 	$(FC) $(FOPT) -c  $<
 
 
+.PHONEY: clean
+
 clean:
 	rm -f *.o *.mod *.so *.x
