@@ -9,3 +9,6 @@
 
 # ignore any VScode settings
 .vscode/*
+
+# ignore .dat files in root directory
+/*.dat
