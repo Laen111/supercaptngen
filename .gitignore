@@ -12,3 +12,6 @@
 
 # ignore .dat files in root directory
 /*.dat
+
+# ignore .so library files in root directory
+/*.so

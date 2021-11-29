@@ -7,7 +7,7 @@
 !   Sticking with notation of 1504.04378. Cite that paper. Or 1605.06502 it's even better.
 
 
-module supermod
+module opermod
     use sharedmod
     implicit none
     double precision, parameter :: hbar=6.582d-25 !GeV*s
@@ -62,7 +62,7 @@ module supermod
                 - dgamic(1.+dble(mq),B*mu/muplus**2))
         end if
     end function GFFI_A_oper
-end module supermod
+end module opermod
 
 subroutine captn_init_oper()
     use opermod
