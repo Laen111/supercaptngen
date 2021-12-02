@@ -44,7 +44,7 @@ module supermod
     
     ! values shared by module, set by supercaptn_init
     double precision :: usun, u0, rho0, vesc_halo
-    double precision :: Mej, ISM, Dist
+    double precision :: Mej, ISM, Dist, Esn
 
     contains
 
@@ -180,6 +180,7 @@ subroutine supercaptn(mx_in, jx_in, q, w, v, niso, scattered)
     double precision :: prefactor_array(niso,11,2)
 
     double precision :: DsigmaDe, Rshock, Vshock
+    double precision :: lam_FE, lam_ST, t_0, R_0, t
     double precision, intent(in) :: q, w, v
 
     ! dimension alist(1000),blist(1000),elist(1000),iord(1000),rlist(1000)!for integrator
@@ -194,10 +195,15 @@ subroutine supercaptn(mx_in, jx_in, q, w, v, niso, scattered)
     j_chi = jx_in
 
     ! from Chris' notes
-    Vshock = 1 !temp
+    lam_FE = 4./7.
+    lam_ST = 2./5.
+    R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
+    t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)
+    t = Dist/v ! CHECK THESE UNITS!
+    Rshock = R_0 * ((t/t_0)**(-5.*lam_FE) + (t/t_0)**(-5.*lam_ST))**(-1./5.)
 
     ! from Chris' notes
-    Rshock = 1 !temp
+    Vshock = R_0/t_0 * (Rshock/R_0)**6 * (lam_FE*(t/t_0)**(-5.*lam_FE-1.) + lam_ST*(t/t_0)**(-5.*lam_ST-1.))
 
     do eli = 1, niso
         do q_pow = 1, 11
@@ -363,7 +369,7 @@ subroutine supercaptn(mx_in, jx_in, q, w, v, niso, scattered)
     ! end if
 end subroutine supercaptn
 
-subroutine supercaptn_init(rho0_in, usun_in, u0_in, vesc_in, Mej_in, ISM_in, Dist_in)
+subroutine supercaptn_init(rho0_in, usun_in, u0_in, vesc_in, Mej_in, ISM_in, Dist_in,Esn_in)
     ! input velocities in km/s, not cm/s!!!
     use supermod
     implicit none
@@ -372,7 +378,7 @@ subroutine supercaptn_init(rho0_in, usun_in, u0_in, vesc_in, Mej_in, ISM_in, Dis
     real :: WM, WS2, WS1, WP2, WMP2, WP1, WD, WS1D
     
     double precision,intent(in) :: rho0_in,usun_in,u0_in,vesc_in
-    double precision, intent(in) :: Mej_in, ISM_in, Dist_in
+    double precision, intent(in) :: Mej_in, ISM_in, Dist_in, Esn_in
     
     ! load values into module
     usun = usun_in*1.d5
@@ -382,6 +388,7 @@ subroutine supercaptn_init(rho0_in, usun_in, u0_in, vesc_in, Mej_in, ISM_in, Dis
     Mej = Mej_in*1.98841d30 ! convert Solar Masses to kg
     ISM = ISM_in ! loaded in cm^-3
     Dist = Dist_in ! loaded in cm
+    Esn = Esn_in !loaded in ergs
 
     ! mass fraction is given by MassFrac_super, from SNe sims
     ! it doesn't vary with a radial coordinate, so it is only a fixed frac per isotope
