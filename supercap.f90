@@ -44,58 +44,58 @@ module supermod
     
     ! values shared by module, set by supercaptn_init
     double precision :: usun, u0, rho0, vesc_halo
-    double precision :: Mej, ISM
+    double precision :: Mej, ISM, Dist
 
     contains
 
-    !   this is the function f_sun(u) in 1504.04378 eqn 2.2 divided by u
-    !velocity distribution,
-    function vdist_over_u(u)
-        double precision :: u, vdist_over_u, normfact
-        vdist_over_u = (3./2.)**(3./2.)*4.*rho0*u/sqrt(pi)/mdm/u0**3 &
-        *exp(-3.*(usun**2+u**2)/(2.*u0**2))*sinh(3.*u*usun/u0**2)/(3.*u*usun/u0**2)
-        !normfact = .5*erf(sqrt(3./2.)*(vesc_halo-usun)/u0) + &
-        !.5*erf(sqrt(3./2.)*(vesc_halo+usun)/u0)+ u0/(sqrt(6.*pi)*usun) &
-        !*(exp(-3.*(usun+vesc_halo)/2./u0**2)-exp(-3.*(usun-vesc_halo)/2./u0**2))
-        normfact = 1.
-        !print*,normfact
-        vdist_over_u = vdist_over_u/normfact
-    end function vdist_over_u
+    ! !   this is the function f_sun(u) in 1504.04378 eqn 2.2 divided by u
+    ! !velocity distribution,
+    ! function vdist_over_u(u)
+    !     double precision :: u, vdist_over_u, normfact
+    !     vdist_over_u = (3./2.)**(3./2.)*4.*rho0*u/sqrt(pi)/mdm/u0**3 &
+    !     *exp(-3.*(usun**2+u**2)/(2.*u0**2))*sinh(3.*u*usun/u0**2)/(3.*u*usun/u0**2)
+    !     !normfact = .5*erf(sqrt(3./2.)*(vesc_halo-usun)/u0) + &
+    !     !.5*erf(sqrt(3./2.)*(vesc_halo+usun)/u0)+ u0/(sqrt(6.*pi)*usun) &
+    !     !*(exp(-3.*(usun+vesc_halo)/2./u0**2)-exp(-3.*(usun-vesc_halo)/2./u0**2))
+    !     normfact = 1.
+    !     !print*,normfact
+    !     vdist_over_u = vdist_over_u/normfact
+    ! end function vdist_over_u
 
-    ! having removed the scaling momentum, are the units off here? I'm looking at the p/c0 in particular
-    function GFFI_H_oper(w,vesc,mq)
-        double precision :: p, mu,w,vesc,u,muplus,GFFI_H_oper,G
-        integer mq
-        p = mdm*w
-        mu = mdm/mnuc
-        muplus = (1.+mu)/2.
-        u = sqrt(w**2-vesc**2)
-        if (mq .ne. -1) then
-            G = (p/c0)**(2.d0*mq)*mdm*w**2/(2.d0*mu**mq)*1./(1.+mq)*((mu/muplus**2)**(mq+1)-(u**2/w**2)**(mq+1))
-        else
-            G = (p/c0)**(2.d0*mq)*mdm*w**2/(2.d0*mu**mq)*log(mu/muplus**2*w**2/(u)**2)
-        endif
-        GFFI_H_oper = G
-    end function GFFI_H_oper
+    ! ! having removed the scaling momentum, are the units off here? I'm looking at the p/c0 in particular
+    ! function GFFI_H_oper(w,vesc,mq)
+    !     double precision :: p, mu,w,vesc,u,muplus,GFFI_H_oper,G
+    !     integer mq
+    !     p = mdm*w
+    !     mu = mdm/mnuc
+    !     muplus = (1.+mu)/2.
+    !     u = sqrt(w**2-vesc**2)
+    !     if (mq .ne. -1) then
+    !         G = (p/c0)**(2.d0*mq)*mdm*w**2/(2.d0*mu**mq)*1./(1.+mq)*((mu/muplus**2)**(mq+1)-(u**2/w**2)**(mq+1))
+    !     else
+    !         G = (p/c0)**(2.d0*mq)*mdm*w**2/(2.d0*mu**mq)*log(mu/muplus**2*w**2/(u)**2)
+    !     endif
+    !     GFFI_H_oper = G
+    ! end function GFFI_H_oper
     
-    function GFFI_A_oper(w,vesc,A,mq)
-        double precision :: p, mu,w,vesc,u,muplus,mN,A,Ei,B
-        double precision :: dgamic,GFFI_A_oper
-        integer :: mq
-        p = mdm*w
-        mu = mdm/mnuc/A
-        muplus = (1.+mu)/2.
-        u = sqrt(w**2-vesc**2)
-        mN = A*mnuc
-        Ei = 1./4.d0/mN/264.114*(45.d0*A**(-1./3.)-25.d0*A**(-2./3.))
-        B = .5*mdm*w**2/Ei/c0**2
-        if (mq .eq. 0) then
-            GFFI_A_oper = Ei*c0**2*(exp(-mdm*u**2/2/Ei/c0**2)-exp(-B*mu/muplus**2))
-        else
-            GFFI_A_oper = ((p)/c0)**(2*mq)*Ei*c0**2/(B*mu)**mq*(dgamic(1.+dble(mq),B*u**2/w**2) &
-                - dgamic(1.+dble(mq),B*mu/muplus**2))
-        end if
-    end function GFFI_A_oper
+    ! function GFFI_A_oper(w,vesc,A,mq)
+    !     double precision :: p, mu,w,vesc,u,muplus,mN,A,Ei,B
+    !     double precision :: dgamic,GFFI_A_oper
+    !     integer :: mq
+    !     p = mdm*w
+    !     mu = mdm/mnuc/A
+    !     muplus = (1.+mu)/2.
+    !     u = sqrt(w**2-vesc**2)
+    !     mN = A*mnuc
+    !     Ei = 1./4.d0/mN/264.114*(45.d0*A**(-1./3.)-25.d0*A**(-2./3.))
+    !     B = .5*mdm*w**2/Ei/c0**2
+    !     if (mq .eq. 0) then
+    !         GFFI_A_oper = Ei*c0**2*(exp(-mdm*u**2/2/Ei/c0**2)-exp(-B*mu/muplus**2))
+    !     else
+    !         GFFI_A_oper = ((p)/c0)**(2*mq)*Ei*c0**2/(B*mu)**mq*(dgamic(1.+dble(mq),B*u**2/w**2) &
+    !             - dgamic(1.+dble(mq),B*mu/muplus**2))
+    !     end if
+    ! end function GFFI_A_oper
 end module supermod
 
 
@@ -134,33 +134,33 @@ subroutine populate_array_super(val, couple, isospin)
     coupling_Array(cpl,iso) = val
 end subroutine populate_array_super
 
-! this is the integral over R in eqn 2.3 in arxiv:1501.03729
-! note that Omega there is expanded and broken into terms of the form: const. * q^2n * exp{E_R/E_i}
-! I've doen this so that I can tap into the GFFI functions in eqn 2.9 of arxiv:1504.04378
-! THIS IS THE IMPORTANT FUNCTION: the integrand for the integral over u
-function integrand_super(u, foveru)
-    use opermod
-    double precision :: u, w, integrand_oper, foveru !int, vesc
-    external foveru
+! ! this is the integral over R in eqn 2.3 in arxiv:1501.03729
+! ! note that Omega there is expanded and broken into terms of the form: const. * q^2n * exp{E_R/E_i}
+! ! I've doen this so that I can tap into the GFFI functions in eqn 2.9 of arxiv:1504.04378
+! ! THIS IS THE IMPORTANT FUNCTION: the integrand for the integral over u
+! function integrand_super(u, foveru)
+!     use supermod
+!     double precision :: u, w, integrand_oper, foveru !int, vesc
+!     external foveru
 
-    ! vesc = tab_vesc(ri_for_omega)
+!     ! vesc = tab_vesc(ri_for_omega)
 
-    w = sqrt(u**2+vesc_shared_arr(rindex_shared)**2)
+!     w = sqrt(u**2+vesc_shared_arr(rindex_shared)**2)
 
-    !Switch depending on whether we are capturing on Hydrogen or not
-    if (a_shared .gt. 2.d0) then
-        integrand_oper = foveru(u)*GFFI_A_oper(w,vesc_shared_arr(rindex_shared),a_shared,q_shared)
-    else
-        integrand_oper = foveru(u)*GFFI_H_oper(w,vesc_shared_arr(rindex_shared),q_shared)
-    end if
-    if (w_shared) then
-        integrand_oper = integrand_oper * w**2
-    end if
+!     !Switch depending on whether we are capturing on Hydrogen or not
+!     if (a_shared .gt. 2.d0) then
+!         integrand_oper = foveru(u)*GFFI_A_oper(w,vesc_shared_arr(rindex_shared),a_shared,q_shared)
+!     else
+!         integrand_oper = foveru(u)*GFFI_H_oper(w,vesc_shared_arr(rindex_shared),q_shared)
+!     end if
+!     if (w_shared) then
+!         integrand_oper = integrand_oper * w**2
+!     end if
 
-end function integrand_super
+! end function integrand_super
 
 ! designed to calculate the scattering from supernovae on dark matter
-subroutine supercaptn(mx_in, jx_in, niso, scattered)
+subroutine supercaptn(mx_in, jx_in, q, w, v, niso, scattered)
     use supermod
     implicit none
     integer, intent(in):: niso
@@ -168,9 +168,9 @@ subroutine supercaptn(mx_in, jx_in, niso, scattered)
     double precision, intent(in) :: mx_in, jx_in
     double precision :: scattered !this is the output
     double precision :: a, muminus, umax, umin, vesc, result
-    double precision :: epsabs, epsrel, abserr, neval !for integrator
-    double precision :: ier,alist,blist,rlist,elist,iord,last !for integrator
-    double precision :: int_res
+    ! double precision :: epsabs, epsrel, abserr, neval !for integrator
+    ! double precision :: ier,alist,blist,rlist,elist,iord,last !for integrator
+    ! double precision :: int_res
 
     ! specific to captn_oper
     integer :: funcType, tau, taup, term_R, term_W, q_pow, w_pow ! loop indicies
@@ -179,16 +179,25 @@ subroutine supercaptn(mx_in, jx_in, niso, scattered)
     double precision :: RD, RM, RMP2, RP1, RP2, RS1, RS1D, RS2 !R functions stored in their own source files
     double precision :: prefactor_array(niso,11,2)
 
-    dimension alist(1000),blist(1000),elist(1000),iord(1000),rlist(1000)!for integrator
-    external integrand_oper
-    external integrand_oper_extrawterm
+    double precision :: DsigmaDe, Rshock, Vshock
+    double precision, intent(in) :: q, w, v
 
-    epsabs=1.d-6
-    epsrel=1.d-6
-    limit=1000
+    ! dimension alist(1000),blist(1000),elist(1000),iord(1000),rlist(1000)!for integrator
+    ! external integrand_oper
+    ! external integrand_oper_extrawterm
+
+    ! epsabs=1.d-6
+    ! epsrel=1.d-6
+    ! limit=1000
 
     mdm = mx_in
     j_chi = jx_in
+
+    ! from Chris' notes
+    Vshock = 1 !temp
+
+    ! from Chris' notes
+    Rshock = 1 !temp
 
     do eli = 1, niso
         do q_pow = 1, 11
@@ -290,54 +299,62 @@ subroutine supercaptn(mx_in, jx_in, niso, scattered)
 
     ! now with all the prefactors computed, any 0.d0 entries in prefactor_array means that we can skip that integral evaluation!
     scattered = 0.d0
-    umin = 0.d0
+    ! umin = 0.d0
     ! do ri=1,nlines
     !     vesc = tab_vesc(ri)
     !     rindex_shared = ri !make accessible via the module, used to get vesc value (and calculate w velocity) in integrand
     !     vesc_shared_arr(ri) = vesc !make accessible via the module
 
     do eli=1,niso !isotopeChosen, isotopeChosen
-        int_res = 0.d0
+        ! int_res = 0.d0
         a = AtomicNumber_super(eli)
-        a_shared = a !make accessible via the module
+        ! a_shared = a !make accessible via the module
 
-        mu = mdm/(mnuc*a)
-        muplus = (1.+mu)/2.
-        muminus = (mu-1.d0)/2.
+        ! mu = mdm/(mnuc*a)
+        ! muplus = (1.+mu)/2.
+        ! muminus = (mu-1.d0)/2.
 
         J = AtomicSpin_super(eli)
 
         ! DO WE STILL NEED TO DO THIS CHOP FOR SNe?
         ! Chop the top of the integral off at the smaller of the halo escape velocity or the minimum velocity required for capture.
-        umax = min(vesc * sqrt(mu)/abs(muminus), vesc_halo)
+        ! umax = min(vesc * sqrt(mu)/abs(muminus), vesc_halo)
 
+        result = 0.d0
         do w_pow=1,2
-            ! toggles whether we integrate with the w^2 term on
-            w_shared = .false.
-            if(w_pow.eq.2) then
-                w_shared = .true.
-            end if
+            ! ! toggles whether we integrate with the w^2 term on
+            ! w_shared = .false.
+            ! if(w_pow.eq.2) then
+            !     w_shared = .true.
+            ! end if
 
             do q_pow=1,11
                 if ( prefactor_array(eli,q_pow,w_pow).ne.0. ) then
-                    result = 0.d0
-                    q_shared = q_pow - 1
-                    !Call integrator
-                    call dsntdqagse(integrand_oper,vdist_over_u,umin,umax, &
-                        epsabs,epsrel,limit,result,abserr,neval,ier,alist,blist,rlist,elist,iord,last)
+                    ! q_shared = q_pow - 1
+                    ! !Call integrator
+                    ! call dsntdqagse(integrand_oper,vdist_over_u,umin,umax, &
+                    !     epsabs,epsrel,limit,result,abserr,neval,ier,alist,blist,rlist,elist,iord,last)
 
-                    int_res = int_res + result * prefactor_array(eli,q_pow,w_pow)
+                    result = result + prefactor_array(eli,q_pow,w_pow) * q**(q_pow-1) * w**(w_pow-1)
                 end if
             end do !q_pow
         end do !w_pow
 
-        ! CHECK THIS FOR UNITS AGAIN, IT PROBABLY NEEDS TO BE CHANGE TO GET PHI(v) OUT OF IT
-        factor_final = 1.!(2*mnuc*a)/(2*J+1) * NAvo*tab_starrho(ri)*tab_mfr_oper(ri,eli)/(mnuc*a) * &
+        ! CHECK THIS FOR UNITS AGAIN, IT PROBABLY NEEDS TO BE CHANGED TO GET PHI(v) OUT OF IT
+        factor_final = (2*mnuc*a)/(2*J+1) * 1/w**2 !* NAvo*tab_starrho(ri)*tab_mfr_oper(ri,eli)/(mnuc*a) * &
             ! tab_r(ri)**2*tab_dr(ri) * (hbar*c0)**2
-        scattered = scattered + int_res * factor_final
+
+        DsigmaDe = result * factor_final
+
+        scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * v*DsigmaDe
+        if ( eli.eq.1 ) then
+            scattered = scattered + (4.*pi*Rshock*ISM)/(3.) * v*DsigmaDe
+        end if
+
     end do !eli
     ! end do !ri
 
+    scattered = scattered * (rho0*Vshock)/(4*pi*Dist**2)
     ! capped = 4.d0*pi*Rsun**3*capped
 
     ! if (capped .gt. 1.d100) then
@@ -346,7 +363,7 @@ subroutine supercaptn(mx_in, jx_in, niso, scattered)
     ! end if
 end subroutine supercaptn
 
-subroutine supercaptn_init(rho0_in, usun_in, u0_in, vesc_in, Mej_in, ISM_in)
+subroutine supercaptn_init(rho0_in, usun_in, u0_in, vesc_in, Mej_in, ISM_in, Dist_in)
     ! input velocities in km/s, not cm/s!!!
     use supermod
     implicit none
@@ -355,7 +372,7 @@ subroutine supercaptn_init(rho0_in, usun_in, u0_in, vesc_in, Mej_in, ISM_in)
     real :: WM, WS2, WS1, WP2, WMP2, WP1, WD, WS1D
     
     double precision,intent(in) :: rho0_in,usun_in,u0_in,vesc_in
-    double precision, intent(in) :: Mej_in, ISM_in
+    double precision, intent(in) :: Mej_in, ISM_in, Dist_in
     
     ! load values into module
     usun = usun_in*1.d5
@@ -364,6 +381,7 @@ subroutine supercaptn_init(rho0_in, usun_in, u0_in, vesc_in, Mej_in, ISM_in)
     vesc_halo = vesc_in*1.d5
     Mej = Mej_in*1.98841d30 ! convert Solar Masses to kg
     ISM = ISM_in ! loaded in cm^-3
+    Dist = Dist_in ! loaded in cm
 
     ! mass fraction is given by MassFrac_super, from SNe sims
     ! it doesn't vary with a radial coordinate, so it is only a fixed frac per isotope
