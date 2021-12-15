@@ -320,42 +320,16 @@ subroutine supercaptn(mx_in, jx_in, w, niso, scattered)
 
     ! now with all the prefactors computed, any 0.d0 entries in prefactor_array means that we can skip that integral evaluation!
     scattered = 0.d0
-    ! umin = 0.d0
-    ! do ri=1,nlines
-    !     vesc = tab_vesc(ri)
-    !     rindex_shared = ri !make accessible via the module, used to get vesc value (and calculate w velocity) in integrand
-    !     vesc_shared_arr(ri) = vesc !make accessible via the module
+    do eli=1,niso
 
-    do eli=1,niso !isotopeChosen, isotopeChosen
-        ! int_res = 0.d0
         a = AtomicNumber_super(eli)
-        ! a_shared = a !make accessible via the module
-
-        ! mu = mdm/(mnuc*a)
-        ! muplus = (1.+mu)/2.
-        ! muminus = (mu-1.d0)/2.
-
         J = AtomicSpin_super(eli)
-
-        ! DO WE STILL NEED TO DO THIS CHOP FOR SNe?
-        ! Chop the top of the integral off at the smaller of the halo escape velocity or the minimum velocity required for capture.
-        ! umax = min(vesc * sqrt(mu)/abs(muminus), vesc_halo)
 
         result = 0.d0
         do w_pow=1,2
-            ! ! toggles whether we integrate with the w^2 term on
-            ! w_shared = .false.
-            ! if(w_pow.eq.2) then
-            !     w_shared = .true.
-            ! end if
 
             do q_pow=1,11
                 if ( prefactor_array(eli,q_pow,w_pow).ne.0. ) then
-                    ! q_shared = q_pow - 1
-                    ! !Call integrator
-                    ! call dsntdqagse(integrand_oper,vdist_over_u,umin,umax, &
-                    !     epsabs,epsrel,limit,result,abserr,neval,ier,alist,blist,rlist,elist,iord,last)
-
                     ! the energy in the integral is given by delta function: E = (mdm * w^2)/2.
                     ! the momentum transfer is defined using the energy of moving DM: E = q^2/(mdm*2)
                     ! gives: q = mdm * w
@@ -366,9 +340,6 @@ subroutine supercaptn(mx_in, jx_in, w, niso, scattered)
         end do !w_pow
 
         ! CHECK THIS FOR UNITS AGAIN, IT PROBABLY NEEDS TO BE CHANGED TO GET PHI(v) OUT OF IT
-        ! factor_final = (2*mnuc*a)/(2*J+1) !* NAvo*tab_starrho(ri)*tab_mfr_oper(ri,eli)/(mnuc*a) * &
-            ! tab_r(ri)**2*tab_dr(ri) * (hbar*c0)**2
-
         DsigmaDe = result * (2*mnuc*a)/(2*J+1)
 
         scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
@@ -377,11 +348,9 @@ subroutine supercaptn(mx_in, jx_in, w, niso, scattered)
         end if
 
     end do !eli
-    ! end do !ri
 
     scattered = scattered * (rho0*Vshock(Dist/w))/(4*pi*w*Dist**2)
-    ! capped = 4.d0*pi*Rsun**3*capped
-
+    
     ! if (capped .gt. 1.d100) then
     !   print*,"Capt'n General says: Oh my, it looks like you are capturing an", &
     !     "infinite amount of dark matter in the Sun. Best to look into that."
