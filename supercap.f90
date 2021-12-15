@@ -10,7 +10,7 @@
 module supermod
     implicit none
     double precision, parameter :: hbar=6.582d-25 !GeV*s
-    double precision, parameter :: pi=3.141592653, NAvo=6.0221409d23
+    double precision, parameter :: pi=3.141592653
     double precision, parameter :: c0=2.99792458d10, mnuc=0.938
     
     double precision, parameter :: AtomicNumber_super(8) = (/ 1., 4., 12., 20., 24., 28., 32., 56. /) !the isotopes the catena paper uses
@@ -37,13 +37,10 @@ module supermod
     double precision :: W_array_super(8,8,2,2,7)
     double precision :: yConverse_array_super(8)
 
-    integer :: q_shared
-    logical :: w_shared
-
-    double precision :: mdm, vesc_shared, a_shared, mu, muplus
+    double precision :: mdm
     
     ! values shared by module, set by supercaptn_init
-    double precision :: usun, u0, rho0, vesc_halo
+    double precision :: rho0
     double precision :: Mej, ISM, Dist, Esn
 
     contains
@@ -283,22 +280,18 @@ subroutine supercaptn(mx_in, jx_in, w, niso, scattered)
     ! end if
 end subroutine supercaptn
 
-subroutine supercaptn_init(rho0_in, usun_in, u0_in, vesc_in, Mej_in, ISM_in, Dist_in,Esn_in)
+subroutine supercaptn_init(rho0_in, Mej_in, ISM_in, Dist_in, Esn_in)
     ! input velocities in km/s, not cm/s!!!
     use supermod
     implicit none
+    double precision, intent(in) :: rho0_in, Mej_in, ISM_in, Dist_in, Esn_in
+
     integer :: i, j, k, l, m
     character (len=2) :: terms(7) = [character(len=2) :: "y0", "y1", "y2", "y3", "y4", "y5", "y6"]
     real :: WM, WS2, WS1, WP2, WMP2, WP1, WD, WS1D
     
-    double precision,intent(in) :: rho0_in,usun_in,u0_in,vesc_in
-    double precision, intent(in) :: Mej_in, ISM_in, Dist_in, Esn_in
-    
     ! load values into module
-    usun = usun_in*1.d5
-    u0 =  u0_in*1.d5
     rho0 = rho0_in
-    vesc_halo = vesc_in*1.d5
     Mej = Mej_in*1.98841d30 ! convert Solar Masses to kg
     ISM = ISM_in ! loaded in cm^-3
     Dist = Dist_in ! loaded in cm
