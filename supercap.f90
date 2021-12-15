@@ -204,33 +204,18 @@ end subroutine populate_array_super
 subroutine supercaptn(mx_in, jx_in, w, niso, scattered)
     use supermod
     implicit none
-    integer, intent(in):: niso
-    integer eli!, ri, limit
     double precision, intent(in) :: mx_in, jx_in, w
-    double precision :: scattered !this is the output
-    double precision :: a, result!, muminus, umax, umin, vesc
-    ! double precision :: epsabs, epsrel, abserr, neval !for integrator
-    ! double precision :: ier,alist,blist,rlist,elist,iord,last !for integrator
-    ! double precision :: int_res
+    integer, intent(in):: niso
+    double precision, intent(out) :: scattered !this is the output
 
-    ! specific to captn_oper
-    integer :: funcType, tau, taup, term_R, term_W, q_pow, w_pow ! loop indicies
+    integer eli, funcType, tau, taup, term_R, term_W, q_pow, w_pow ! loop indicies
+    double precision :: a, J, j_chi, mu_T
+    double precision :: result, DsigmaDe
+
     integer :: q_functype, q_index
-    double precision :: J, j_chi, RFuncConst, WFuncConst, mu_T, prefactor_functype, prefactor_current
+    double precision ::  RFuncConst, WFuncConst, prefactor_functype, prefactor_current
     double precision :: RD, RM, RMP2, RP1, RP2, RS1, RS1D, RS2 !R functions stored in their own source files
     double precision :: prefactor_array(niso,11,2)
-
-    double precision :: DsigmaDe
-    ! double precision :: Rshock, Vshock
-    ! double precision :: t
-
-    ! dimension alist(1000),blist(1000),elist(1000),iord(1000),rlist(1000)!for integrator
-    ! external integrand_oper
-    ! external integrand_oper_extrawterm
-
-    ! epsabs=1.d-6
-    ! epsrel=1.d-6
-    ! limit=1000
 
     mdm = mx_in
     j_chi = jx_in
