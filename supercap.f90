@@ -205,10 +205,10 @@ subroutine supercaptn(mx_in, jx_in, w, niso, scattered)
     use supermod
     implicit none
     integer, intent(in):: niso
-    integer ri, eli, limit
+    integer eli!, ri, limit
     double precision, intent(in) :: mx_in, jx_in, w
     double precision :: scattered !this is the output
-    double precision :: a, muminus, umax, umin, vesc, result
+    double precision :: a, result!, muminus, umax, umin, vesc
     ! double precision :: epsabs, epsrel, abserr, neval !for integrator
     ! double precision :: ier,alist,blist,rlist,elist,iord,last !for integrator
     ! double precision :: int_res
@@ -216,13 +216,13 @@ subroutine supercaptn(mx_in, jx_in, w, niso, scattered)
     ! specific to captn_oper
     integer :: funcType, tau, taup, term_R, term_W, q_pow, w_pow ! loop indicies
     integer :: q_functype, q_index
-    double precision :: J, j_chi, RFuncConst, WFuncConst, mu_T, prefactor_functype, factor_final, prefactor_current
+    double precision :: J, j_chi, RFuncConst, WFuncConst, mu_T, prefactor_functype, prefactor_current
     double precision :: RD, RM, RMP2, RP1, RP2, RS1, RS1D, RS2 !R functions stored in their own source files
     double precision :: prefactor_array(niso,11,2)
 
     double precision :: DsigmaDe
     ! double precision :: Rshock, Vshock
-    double precision :: t
+    ! double precision :: t
 
     ! dimension alist(1000),blist(1000),elist(1000),iord(1000),rlist(1000)!for integrator
     ! external integrand_oper
@@ -381,20 +381,20 @@ subroutine supercaptn(mx_in, jx_in, w, niso, scattered)
         end do !w_pow
 
         ! CHECK THIS FOR UNITS AGAIN, IT PROBABLY NEEDS TO BE CHANGED TO GET PHI(v) OUT OF IT
-        factor_final = (2*mnuc*a)/(2*J+1) * 1/w**2 !* NAvo*tab_starrho(ri)*tab_mfr_oper(ri,eli)/(mnuc*a) * &
+        ! factor_final = (2*mnuc*a)/(2*J+1) !* NAvo*tab_starrho(ri)*tab_mfr_oper(ri,eli)/(mnuc*a) * &
             ! tab_r(ri)**2*tab_dr(ri) * (hbar*c0)**2
 
-        DsigmaDe = result * factor_final
+        DsigmaDe = result * (2*mnuc*a)/(2*J+1)
 
         scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
         if ( eli.eq.1 ) then
-            scattered = scattered + (4.*pi*Rshock(Dist/w)*ISM)/(3.) * DsigmaDe
+            scattered = scattered + (4.*pi*Rshock(Dist/w)*ISM)/3. * DsigmaDe
         end if
 
     end do !eli
     ! end do !ri
 
-    scattered = scattered * (rho0*Vshock(Dist/w)*w)/(4*pi*Dist**2)
+    scattered = scattered * (rho0*Vshock(Dist/w))/(4*pi*w*Dist**2)
     ! capped = 4.d0*pi*Rsun**3*capped
 
     ! if (capped .gt. 1.d100) then
