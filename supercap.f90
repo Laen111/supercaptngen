@@ -96,6 +96,47 @@ module supermod
     !             - dgamic(1.+dble(mq),B*mu/muplus**2))
     !     end if
     ! end function GFFI_A_oper
+
+    ! This gives you the radius of the SNe shockwave front as a function of time
+    ! What are the units?
+    function Rshock(t)
+        implicit none
+        double precision :: Rshock
+        double precision, intent(in) :: t
+        double precision :: lam_FE, lam_ST
+        double precision :: R_0, t_0
+        
+        ! from Chris' notes
+        lam_FE = 4./7.
+        lam_ST = 2./5.
+        R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
+        t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)
+
+        ! Rshock = R_0 * ((t/t_0)**(-5.*lam_FE) + (t/t_0)**(-5.*lam_ST))**(-1./5.)
+        Rshock = 1.
+
+    end function Rshock
+
+    ! This gives you the velocity of the SNe shockwave front as a function of time
+    ! What are the units?
+    function Vshock(t)
+        implicit none
+        double precision :: Vshock
+        double precision, intent(in) :: t
+        double precision :: lam_FE, lam_ST
+        double precision :: R_0, t_0
+        
+        ! from Chris' notes
+        lam_FE = 4./7.
+        lam_ST = 2./5.
+        R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
+        t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)
+
+        ! Vshock = R_0/t_0 * (Rshock(t)/R_0)**6 * (lam_FE*(t/t_0)**(-5.*lam_FE-1.) + lam_ST*(t/t_0)**(-5.*lam_ST-1.))
+        Vshock = 1.
+    
+    end function Vshock
+
 end module supermod
 
 
@@ -160,12 +201,12 @@ end subroutine populate_array_super
 ! end function integrand_super
 
 ! designed to calculate the scattering from supernovae on dark matter
-subroutine supercaptn(mx_in, jx_in, q, w, v, niso, scattered)
+subroutine supercaptn(mx_in, jx_in, w, niso, scattered)
     use supermod
     implicit none
     integer, intent(in):: niso
     integer ri, eli, limit
-    double precision, intent(in) :: mx_in, jx_in
+    double precision, intent(in) :: mx_in, jx_in, w
     double precision :: scattered !this is the output
     double precision :: a, muminus, umax, umin, vesc, result
     ! double precision :: epsabs, epsrel, abserr, neval !for integrator
@@ -179,9 +220,9 @@ subroutine supercaptn(mx_in, jx_in, q, w, v, niso, scattered)
     double precision :: RD, RM, RMP2, RP1, RP2, RS1, RS1D, RS2 !R functions stored in their own source files
     double precision :: prefactor_array(niso,11,2)
 
-    double precision :: DsigmaDe, Rshock, Vshock
-    double precision :: lam_FE, lam_ST, t_0, R_0, t
-    double precision, intent(in) :: q, w, v
+    double precision :: DsigmaDe
+    ! double precision :: Rshock, Vshock
+    double precision :: t
 
     ! dimension alist(1000),blist(1000),elist(1000),iord(1000),rlist(1000)!for integrator
     ! external integrand_oper
@@ -193,17 +234,6 @@ subroutine supercaptn(mx_in, jx_in, q, w, v, niso, scattered)
 
     mdm = mx_in
     j_chi = jx_in
-
-    ! from Chris' notes
-    lam_FE = 4./7.
-    lam_ST = 2./5.
-    R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
-    t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)
-    t = Dist/v ! CHECK THESE UNITS!
-    Rshock = R_0 * ((t/t_0)**(-5.*lam_FE) + (t/t_0)**(-5.*lam_ST))**(-1./5.)
-
-    ! from Chris' notes
-    Vshock = R_0/t_0 * (Rshock/R_0)**6 * (lam_FE*(t/t_0)**(-5.*lam_FE-1.) + lam_ST*(t/t_0)**(-5.*lam_ST-1.))
 
     do eli = 1, niso
         do q_pow = 1, 11
@@ -341,7 +371,11 @@ subroutine supercaptn(mx_in, jx_in, q, w, v, niso, scattered)
                     ! call dsntdqagse(integrand_oper,vdist_over_u,umin,umax, &
                     !     epsabs,epsrel,limit,result,abserr,neval,ier,alist,blist,rlist,elist,iord,last)
 
-                    result = result + prefactor_array(eli,q_pow,w_pow) * q**(q_pow-1) * w**(w_pow-1)
+                    ! the energy in the integral is given by delta function: E = (mdm * w^2)/2.
+                    ! the momentum transfer is defined using the energy of moving DM: E = q^2/(mdm*2)
+                    ! gives: q = mdm * w
+                    ! means I can squeeze both the q and w powers onto w, and leave mdm just on q powers:
+                    result = result + prefactor_array(eli,q_pow,w_pow) * mdm**(q_pow-1) * w**(w_pow+q_pow-2)
                 end if
             end do !q_pow
         end do !w_pow
@@ -352,15 +386,15 @@ subroutine supercaptn(mx_in, jx_in, q, w, v, niso, scattered)
 
         DsigmaDe = result * factor_final
 
-        scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * v*DsigmaDe
+        scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
         if ( eli.eq.1 ) then
-            scattered = scattered + (4.*pi*Rshock*ISM)/(3.) * v*DsigmaDe
+            scattered = scattered + (4.*pi*Rshock(Dist/w)*ISM)/(3.) * DsigmaDe
         end if
 
     end do !eli
     ! end do !ri
 
-    scattered = scattered * (rho0*Vshock)/(4*pi*Dist**2)
+    scattered = scattered * (rho0*Vshock(Dist/w)*w)/(4*pi*Dist**2)
     ! capped = 4.d0*pi*Rsun**3*capped
 
     ! if (capped .gt. 1.d100) then
