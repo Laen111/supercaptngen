@@ -10,8 +10,9 @@
 module supermod
     implicit none
     double precision, parameter :: hbar=6.582d-25 !GeV*s
+    double precision, parameter :: c0=2.99792458d10 !cm*s^-1
+    double precision, parameter :: mnuc=0.938 !GeV
     double precision, parameter :: pi=3.141592653
-    double precision, parameter :: c0=2.99792458d10, mnuc=0.938
     
     double precision, parameter :: AtomicNumber_super(8) = (/ 1., 4., 12., 20., 24., 28., 32., 56. /) !the isotopes the catena paper uses
     character (len=4) :: isotopes_super(8) = [character(len=4) :: "H", "He4", "C12", "Ne20", "Mg24", "Si28", "S32", "Fe56"] !the isotopes in text form to match against the W functions
@@ -37,11 +38,7 @@ module supermod
     double precision :: W_array_super(8,8,2,2,7)
     double precision :: yConverse_array_super(8)
 
-    double precision :: mdm
-    
-    ! values shared by module, set by supercaptn_init
-    double precision :: rho0
-    double precision :: Mej, ISM, Dist, Esn
+    double precision :: mdm, rho0, Mej, ISM, Dist, Esn
 
     contains
 
@@ -51,6 +48,7 @@ module supermod
         implicit none
         double precision :: Rshock
         double precision, intent(in) :: t
+        
         double precision :: lam_FE, lam_ST
         double precision :: R_0, t_0
         
@@ -60,7 +58,7 @@ module supermod
         R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
         t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)
 
-        ! Rshock = R_0 * ((t/t_0)**(-5.*lam_FE) + (t/t_0)**(-5.*lam_ST))**(-1./5.)
+        Rshock = R_0 * ((t/t_0)**(-5.*lam_FE) + (t/t_0)**(-5.*lam_ST))**(-1./5.)
         Rshock = 1.
 
     end function Rshock
@@ -71,6 +69,7 @@ module supermod
         implicit none
         double precision :: Vshock
         double precision, intent(in) :: t
+
         double precision :: lam_FE, lam_ST
         double precision :: R_0, t_0
         
@@ -80,7 +79,7 @@ module supermod
         R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
         t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)
 
-        ! Vshock = R_0/t_0 * (Rshock(t)/R_0)**6 * (lam_FE*(t/t_0)**(-5.*lam_FE-1.) + lam_ST*(t/t_0)**(-5.*lam_ST-1.))
+        Vshock = R_0/t_0 * (Rshock(t)/R_0)**6 * (lam_FE*(t/t_0)**(-5.*lam_FE-1.) + lam_ST*(t/t_0)**(-5.*lam_ST-1.))
         Vshock = 1.
     
     end function Vshock
@@ -93,8 +92,9 @@ subroutine populate_array_super(val, couple, isospin)
     ! I was trying to directly edit 'couple' and 'isospin' to use in the array indices, but Fortran was throwing segfaults when doing this
     use supermod
     implicit none
-    integer :: couple, isospin
-    double precision :: val
+    double precision, intent(in) :: val
+    integer, intent(in) :: couple, isospin
+
     integer :: cpl, iso
 
     ! isospin can be 0 or 1
@@ -103,7 +103,6 @@ subroutine populate_array_super(val, couple, isospin)
     else
         stop "Error: isospin can only be 0 or 1!"
     endif
-
 
     ! couple can be integer from 1 to 15, BUT 2 IS NOT ALLOWED!
     if (couple.lt.1) then
