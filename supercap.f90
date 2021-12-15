@@ -48,55 +48,6 @@ module supermod
 
     contains
 
-    ! !   this is the function f_sun(u) in 1504.04378 eqn 2.2 divided by u
-    ! !velocity distribution,
-    ! function vdist_over_u(u)
-    !     double precision :: u, vdist_over_u, normfact
-    !     vdist_over_u = (3./2.)**(3./2.)*4.*rho0*u/sqrt(pi)/mdm/u0**3 &
-    !     *exp(-3.*(usun**2+u**2)/(2.*u0**2))*sinh(3.*u*usun/u0**2)/(3.*u*usun/u0**2)
-    !     !normfact = .5*erf(sqrt(3./2.)*(vesc_halo-usun)/u0) + &
-    !     !.5*erf(sqrt(3./2.)*(vesc_halo+usun)/u0)+ u0/(sqrt(6.*pi)*usun) &
-    !     !*(exp(-3.*(usun+vesc_halo)/2./u0**2)-exp(-3.*(usun-vesc_halo)/2./u0**2))
-    !     normfact = 1.
-    !     !print*,normfact
-    !     vdist_over_u = vdist_over_u/normfact
-    ! end function vdist_over_u
-
-    ! ! having removed the scaling momentum, are the units off here? I'm looking at the p/c0 in particular
-    ! function GFFI_H_oper(w,vesc,mq)
-    !     double precision :: p, mu,w,vesc,u,muplus,GFFI_H_oper,G
-    !     integer mq
-    !     p = mdm*w
-    !     mu = mdm/mnuc
-    !     muplus = (1.+mu)/2.
-    !     u = sqrt(w**2-vesc**2)
-    !     if (mq .ne. -1) then
-    !         G = (p/c0)**(2.d0*mq)*mdm*w**2/(2.d0*mu**mq)*1./(1.+mq)*((mu/muplus**2)**(mq+1)-(u**2/w**2)**(mq+1))
-    !     else
-    !         G = (p/c0)**(2.d0*mq)*mdm*w**2/(2.d0*mu**mq)*log(mu/muplus**2*w**2/(u)**2)
-    !     endif
-    !     GFFI_H_oper = G
-    ! end function GFFI_H_oper
-    
-    ! function GFFI_A_oper(w,vesc,A,mq)
-    !     double precision :: p, mu,w,vesc,u,muplus,mN,A,Ei,B
-    !     double precision :: dgamic,GFFI_A_oper
-    !     integer :: mq
-    !     p = mdm*w
-    !     mu = mdm/mnuc/A
-    !     muplus = (1.+mu)/2.
-    !     u = sqrt(w**2-vesc**2)
-    !     mN = A*mnuc
-    !     Ei = 1./4.d0/mN/264.114*(45.d0*A**(-1./3.)-25.d0*A**(-2./3.))
-    !     B = .5*mdm*w**2/Ei/c0**2
-    !     if (mq .eq. 0) then
-    !         GFFI_A_oper = Ei*c0**2*(exp(-mdm*u**2/2/Ei/c0**2)-exp(-B*mu/muplus**2))
-    !     else
-    !         GFFI_A_oper = ((p)/c0)**(2*mq)*Ei*c0**2/(B*mu)**mq*(dgamic(1.+dble(mq),B*u**2/w**2) &
-    !             - dgamic(1.+dble(mq),B*mu/muplus**2))
-    !     end if
-    ! end function GFFI_A_oper
-
     ! This gives you the radius of the SNe shockwave front as a function of time
     ! What are the units?
     function Rshock(t)
@@ -174,31 +125,6 @@ subroutine populate_array_super(val, couple, isospin)
     ! set the value picked in the slot chosen
     coupling_Array(cpl,iso) = val
 end subroutine populate_array_super
-
-! ! this is the integral over R in eqn 2.3 in arxiv:1501.03729
-! ! note that Omega there is expanded and broken into terms of the form: const. * q^2n * exp{E_R/E_i}
-! ! I've doen this so that I can tap into the GFFI functions in eqn 2.9 of arxiv:1504.04378
-! ! THIS IS THE IMPORTANT FUNCTION: the integrand for the integral over u
-! function integrand_super(u, foveru)
-!     use supermod
-!     double precision :: u, w, integrand_oper, foveru !int, vesc
-!     external foveru
-
-!     ! vesc = tab_vesc(ri_for_omega)
-
-!     w = sqrt(u**2+vesc_shared_arr(rindex_shared)**2)
-
-!     !Switch depending on whether we are capturing on Hydrogen or not
-!     if (a_shared .gt. 2.d0) then
-!         integrand_oper = foveru(u)*GFFI_A_oper(w,vesc_shared_arr(rindex_shared),a_shared,q_shared)
-!     else
-!         integrand_oper = foveru(u)*GFFI_H_oper(w,vesc_shared_arr(rindex_shared),q_shared)
-!     end if
-!     if (w_shared) then
-!         integrand_oper = integrand_oper * w**2
-!     end if
-
-! end function integrand_super
 
 ! designed to calculate the scattering from supernovae on dark matter
 subroutine supercaptn(mx_in, jx_in, w, niso, scattered)
@@ -350,7 +276,7 @@ subroutine supercaptn(mx_in, jx_in, w, niso, scattered)
     end do !eli
 
     scattered = scattered * (rho0*Vshock(Dist/w))/(4*pi*w*Dist**2)
-    
+
     ! if (capped .gt. 1.d100) then
     !   print*,"Capt'n General says: Oh my, it looks like you are capturing an", &
     !     "infinite amount of dark matter in the Sun. Best to look into that."
