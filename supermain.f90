@@ -40,13 +40,13 @@
      ! set the one coupling 'cpl' to a default value, skipping c2-0 (the 2nd index is not used)
      ! zero out the old coupling so that only the desired coupling is non-zero
      if (cpl==1) then
-       call populate_array(1.65d-8, 1, 0)
+       call populate_array_super(1.65d-8, 1, 0)
      else if (cpl==2) then
-       call populate_array(0.d0, 1, 0)
-       call populate_array(1.65d-8, 3, 0)
+       call populate_array_super(0.d0, 1, 0)
+       call populate_array_super(1.65d-8, 3, 0)
      else
-       call populate_array(0.d0, cpl, 0)
-       call populate_array(1.65d-8, cpl+1, 0)
+       call populate_array_super(0.d0, cpl, 0)
+       call populate_array_super(1.65d-8, cpl+1, 0)
      endif
      
      print*
@@ -57,6 +57,9 @@
         dm_Vel = 10**(dble(j-1)/5.)
         call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, dm_Scattered)
         write(55,*) dm_Mass, dm_Vel, dm_Scattered
+        ! if ( dm_Scattered < 0. ) then
+        !   print*, "Dark Matter Mass: ", dm_Mass, "Dark Matter Velocity: ", dm_Vel, "Scattered: ", dm_Scattered
+        ! end if
         print*, "Dark Matter Mass: ", dm_Mass, "Dark Matter Velocity: ", dm_Vel, "Scattered: ", dm_Scattered
        end do
      end do

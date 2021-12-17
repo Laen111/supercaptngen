@@ -38,12 +38,12 @@ module supermod
     double precision :: W_array_super(8,8,2,2,7)
     double precision :: yConverse_array_super(8)
 
-    double precision :: mdm, rho0, Mej, ISM, Dist, Esn
+    double precision :: mdm, rhoX, Mej, ISM, Dist, Esn
 
     contains
 
     ! This gives you the radius of the SNe shockwave front as a function of time
-    ! What are the units?
+    ! NEEDS TO BE OUTPUT AS cm!
     function Rshock(t)
         implicit none
         double precision :: Rshock
@@ -58,13 +58,13 @@ module supermod
         R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
         t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)
 
-        Rshock = R_0 * ((t/t_0)**(-5.*lam_FE) + (t/t_0)**(-5.*lam_ST))**(-1./5.)
+        ! Rshock = R_0 * ((t/t_0)**(-5.*lam_FE) + (t/t_0)**(-5.*lam_ST))**(-1./5.)
         Rshock = 1.
 
     end function Rshock
 
     ! This gives you the velocity of the SNe shockwave front as a function of time
-    ! What are the units?
+    ! NEEDS TO BE OUTPUT AS cm s^{-1}!
     function Vshock(t)
         implicit none
         double precision :: Vshock
@@ -79,7 +79,7 @@ module supermod
         R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
         t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)
 
-        Vshock = R_0/t_0 * (Rshock(t)/R_0)**6 * (lam_FE*(t/t_0)**(-5.*lam_FE-1.) + lam_ST*(t/t_0)**(-5.*lam_ST-1.))
+        ! Vshock = R_0/t_0 * (Rshock(t)/R_0)**6 * (lam_FE*(t/t_0)**(-5.*lam_FE-1.) + lam_ST*(t/t_0)**(-5.*lam_ST-1.))
         Vshock = 1.
     
     end function Vshock
@@ -123,24 +123,32 @@ subroutine populate_array_super(val, couple, isospin)
 end subroutine populate_array_super
 
 ! designed to calculate the scattering from supernovae on dark matter
-subroutine supercaptn(mx_in, jx_in, w, niso, scattered)
+! mx_in: dark matter mass in GeV
+! jx_in: dark matter spin
+! vel_in: dark matter final velocity in km s^{-1}
+! 
+subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     use supermod
     implicit none
-    double precision, intent(in) :: mx_in, jx_in, w
+    double precision, intent(in) :: mx_in, jx_in, vel_in
     integer, intent(in):: niso
     double precision, intent(out) :: scattered !this is the output
 
     integer eli, funcType, tau, taup, term_R, term_W, q_pow, w_pow ! loop indicies
-    double precision :: a, J, j_chi, mu_T
-    double precision :: result, DsigmaDe
+    double precision :: a, J, j_chi, mu_T, vel, V_s, R_s    ! parameters
+    double precision :: result, DsigmaDe    ! used to tally results
 
+    ! parameters used in prefactor calculation
     integer :: q_functype, q_index
     double precision ::  RFuncConst, WFuncConst, prefactor_functype, prefactor_current
     double precision :: RD, RM, RMP2, RP1, RP2, RS1, RS1D, RS2 !R functions stored in their own source files
     double precision :: prefactor_array(niso,11,2)
 
-    mdm = mx_in
+    mdm = mx_in ! input in GeV
     j_chi = jx_in
+    vel = vel_in * 10.**(5) ! convert km s^{-1} to cm s^{-1}
+    R_s = Rshock(Dist/vel) ! given in cm
+    V_s = Vshock(Dist/vel) ! given in cm s^{-1}
 
     do eli = 1, niso
         do q_pow = 1, 11
@@ -256,22 +264,22 @@ subroutine supercaptn(mx_in, jx_in, w, niso, scattered)
                     ! the momentum transfer is defined using the energy of moving DM: E = q^2/(mdm*2)
                     ! gives: q = mdm * w
                     ! means I can squeeze both the q and w powers onto w, and leave mdm just on q powers:
-                    result = result + prefactor_array(eli,q_pow,w_pow) * mdm**(q_pow-1) * w**(w_pow+q_pow-2)
+                    result = result + prefactor_array(eli,q_pow,w_pow) * mdm**(q_pow-1) * V_s**(w_pow+q_pow-2)
                 end if
             end do !q_pow
         end do !w_pow
 
         ! CHECK THIS FOR UNITS AGAIN, IT PROBABLY NEEDS TO BE CHANGED TO GET PHI(v) OUT OF IT
-        DsigmaDe = result * (2*mnuc*a)/(2*J+1)
+        DsigmaDe = result * (2 * mnuc*a)/(V_s**2 * (2*J+1))
 
         scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
         if ( eli.eq.1 ) then
-            scattered = scattered + (4.*pi*Rshock(Dist/w)*ISM)/3. * DsigmaDe
+            scattered = scattered + 4./3.*pi*R_s**3*ISM * DsigmaDe
         end if
 
     end do !eli
 
-    scattered = scattered * (rho0*Vshock(Dist/w))/(4*pi*w*Dist**2)
+    scattered = scattered * (rhoX*V_s*vel)/(4*pi*Dist**2)
 
     ! if (capped .gt. 1.d100) then
     !   print*,"Capt'n General says: Oh my, it looks like you are capturing an", &
@@ -279,22 +287,23 @@ subroutine supercaptn(mx_in, jx_in, w, niso, scattered)
     ! end if
 end subroutine supercaptn
 
-subroutine supercaptn_init(rho0_in, Mej_in, ISM_in, Dist_in, Esn_in)
+subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in)
     ! input velocities in km/s, not cm/s!!!
     use supermod
     implicit none
-    double precision, intent(in) :: rho0_in, Mej_in, ISM_in, Dist_in, Esn_in
+    double precision, intent(in) :: rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in
 
     integer :: i, j, k, l, m
     character (len=2) :: terms(7) = [character(len=2) :: "y0", "y1", "y2", "y3", "y4", "y5", "y6"]
     real :: WM, WS2, WS1, WP2, WMP2, WP1, WD, WS1D
     
     ! load values into module
-    rho0 = rho0_in
+    rhoX = rhoX_in ! loaded in GeV cm^{-3}
+    ! THIS NEEDS TO BE IN GeV?
     Mej = Mej_in*1.98841d30 ! convert Solar Masses to kg
-    ISM = ISM_in ! loaded in cm^-3
-    Dist = Dist_in ! loaded in cm
-    Esn = Esn_in !loaded in ergs
+    ISM = ISM_in ! loaded in cm^{-3}
+    Dist = Dist_in * 3.08567758149*10.**(18) ! convert pc to cm
+    Esn = Esn_in ! loaded in ergs
 
     ! mass fraction is given by MassFrac_super, from SNe sims
     ! it doesn't vary with a radial coordinate, so it is only a fixed frac per isotope
