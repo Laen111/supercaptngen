@@ -1,6 +1,6 @@
-!   Capt'n Oper
-!   Module to house everying specific to captn operator
-!   Neal Avis Kozar 2020
+!   Super Capt'n
+!   Module to house everying specific to Super Capt'n
+!   Neal Avis Kozar 2021
 !   all units of distance: cm
 !   all units of mass/energy : GeV (or GeV/c^2, don't forget)
 !   all units of time: seconds
