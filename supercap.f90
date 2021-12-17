@@ -299,10 +299,9 @@ subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in)
     
     ! load values into module
     rhoX = rhoX_in ! loaded in GeV cm^{-3}
-    ! THIS NEEDS TO BE IN GeV?
-    Mej = Mej_in*1.98841d30 ! convert Solar Masses to kg
+    Mej = Mej_in * 1.98841d30 * 5.60958860d26! convert Solar Masses to kg to GeV c^{-2}
     ISM = ISM_in ! loaded in cm^{-3}
-    Dist = Dist_in * 3.08567758149*10.**(18) ! convert pc to cm
+    Dist = Dist_in * 3.08567758149d18 ! convert pc to cm
     Esn = Esn_in ! loaded in ergs
 
     ! mass fraction is given by MassFrac_super, from SNe sims
