@@ -56,7 +56,7 @@
        do j = 1,11
         dm_Vel = 10**(dble(j-1)/5.)
         call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, dm_Scattered)
-        write(55,*) dm_Mass, " | ", dm_Scattered
+        write(55,*) dm_Mass, dm_Vel, dm_Scattered
         print*, "Dark Matter Mass: ", dm_Mass, "Dark Matter Velocity: ", dm_Vel, "Scattered: ", dm_Scattered
        end do
      end do
