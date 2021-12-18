@@ -12,5 +12,6 @@ The test main file shows how to work with Super Capt'n.
 ### TODO:
 
 - Figure out why the $c_{5}^{0}$, $c_{7}^{0}$, $c_{8}^{0}$, $c_{13}^{0}$, and $c_{14}^{0}$ couplings have negative values (something to do with $(v^\perp_T)^2 = w^2 - \left(\frac{q}{2\mu_T}\right)^2$)
+- Put actual functions into $V_\text{shock}$ and $R_\text{shock}$ (currently just passing `1.`)
 - Refine user interface to Super Capt'n
 - Double check the units (especially on the energy of the supernova [ergs -> GeV?] and the $V_\text{shock}$ and $R_\text{shock}$ functions)
