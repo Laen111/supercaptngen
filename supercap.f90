@@ -231,6 +231,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                                         ! it has one extra q^2 contribution compared to the current W & R function contributions
                                         prefactor_array(eli,q_index+1,1) = prefactor_array(eli,q_index+1,1) - prefactor_current * &
                                             (c0**2/(4.*mu_T**2)) ! The Rfunctions are programmed with the 1/c0^2 in their v_perp^2 term (so I need to un-correct it for the- q^2/(2*mu_T)^2, and leave it be for the w^2/c^2)
+                                        
                                         ! this is the +w^2 contribution
                                         ! it has the same q^2 contribution, but has a v_perp^2 contribution
                                         prefactor_array(eli,q_index,2) = prefactor_array(eli,q_index,2) + prefactor_current
