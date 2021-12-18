@@ -302,6 +302,7 @@ subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in)
     Mej = Mej_in * 1.98841d30 * 5.60958860d26! convert Solar Masses to kg to GeV c^{-2}
     ISM = ISM_in ! loaded in cm^{-3}
     Dist = Dist_in * 3.08567758149d18 ! convert pc to cm
+    ! this might need to be in GeV, check the Vshock and Rshock functions to see if units work out in ergs
     Esn = Esn_in ! loaded in ergs
 
     ! mass fraction is given by MassFrac_super, from SNe sims
