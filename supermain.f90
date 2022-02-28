@@ -1,4 +1,9 @@
 ! Super Capt'n General testing program
+! Uses `supercap.f90` source file
+! call `supercaptn_init` to start
+! then `populate_array_super` to populate the coupling array with desired parameters
+! then `supercaptn` to perform the calculation
+! can then call `populate_array_super` again to pick a new combination of couplings
 
     PROGRAM SUPERCAP
     implicit none
@@ -57,6 +62,7 @@
         dm_Vel = 10**(dble(j-1)/5.)
         call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, dm_Scattered)
         write(55,*) dm_Mass, dm_Vel, dm_Scattered
+        ! Use this to check for negative scattering numbers (couplings 5, 7, 8, 13, 14)
         ! if ( dm_Scattered < 0. ) then
         !   print*, "Dark Matter Mass: ", dm_Mass, "Dark Matter Velocity: ", dm_Vel, "Scattered: ", dm_Scattered
         ! end if

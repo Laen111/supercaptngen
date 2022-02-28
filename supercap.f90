@@ -229,6 +229,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                                     if ( mod(term_R,2).eq.0 ) then
                                         ! this is the -q^2/(2mu_T)^2 contribution
                                         ! it has one extra q^2 contribution compared to the current W & R function contributions
+                                        ! TRACK THIS LINE, SHOULD BE ONLY PLACE WHERE NEGATIVES APPEAR?
                                         prefactor_array(eli,q_index+1,1) = prefactor_array(eli,q_index+1,1) - prefactor_current * &
                                             (c0**2/(4.*mu_T**2)) ! The Rfunctions are programmed with the 1/c0^2 in their v_perp^2 term (so I need to un-correct it for the- q^2/(2*mu_T)^2, and leave it be for the w^2/c^2)
                                         
