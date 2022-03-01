@@ -56,7 +56,7 @@ module supermod
         lam_FE = 4./7.
         lam_ST = 2./5.
         R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
-        t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)
+        t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.) / c0 ! include missing units of c to get t_0 in sec
 
         ! Rshock = R_0 * ((t/t_0)**(-5.*lam_FE) + (t/t_0)**(-5.*lam_ST))**(-1./5.)
         Rshock = 1.
@@ -77,13 +77,15 @@ module supermod
         lam_FE = 4./7.
         lam_ST = 2./5.
         R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
-        t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)
+        t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.) / c0 ! include missing units of c to get t_0 in sec
 
         ! Vshock = R_0/t_0 * (Rshock(t)/R_0)**6 * (lam_FE*(t/t_0)**(-5.*lam_FE-1.) + lam_ST*(t/t_0)**(-5.*lam_ST-1.))
         Vshock = 1.
     
     end function Vshock
 
+    ! NOTE TO SELF:
+    ! FIND A BETTER WAY TO CALULATE R AND V SHOCK, CURRENTLY HAVE DUPLICATED CODE THAT COULD LEAD TO ISSUES IN BUGFIXING LATER
 end module supermod
 
 
@@ -305,7 +307,7 @@ subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in)
     ISM = ISM_in ! loaded in cm^{-3}
     Dist = Dist_in * 3.08567758149d18 ! convert pc to cm
     ! this might need to be in GeV, check the Vshock and Rshock functions to see if units work out in ergs
-    Esn = Esn_in ! loaded in ergs
+    Esn = Esn_in * 624.151 ! convert ergs to GeV
 
     ! mass fraction is given by MassFrac_super, from SNe sims
     ! it doesn't vary with a radial coordinate, so it is only a fixed frac per isotope

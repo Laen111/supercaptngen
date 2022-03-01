@@ -17,3 +17,4 @@ Something is screwy with line 233 in `supercap.f90`, where I try to add the nega
 - Put actual functions into $V_\text{shock}$ and $R_\text{shock}$ (currently just passing `1.`)
 - Refine user interface to Super Capt'n
 - Double check the units (especially on the energy of the supernova [ergs -> GeV?] and the $V_\text{shock}$ and $R_\text{shock}$ functions)
+- Organize the Rshock and Vshock functions better (currently they feature duplicated code blocks, not good)
