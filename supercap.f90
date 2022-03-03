@@ -162,8 +162,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
     mdm = mx_in ! input in GeV
     j_chi = jx_in
-    vel = vel_in * 10.**(5) ! convert km s^{-1} to cm s^{-1}
-    time = Dist/vel ! time for DM to reach earth (traveling Dist to earth at upscattered velocity vel)
+    vel = vel_in * 1.d5 ! convert km s^{-1} to cm s^{-1}
     R_s = Rshock(time) ! given in cm
     V_s = Vshock(time) ! given in cm s^{-1}
 

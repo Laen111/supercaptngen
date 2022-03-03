@@ -14,6 +14,7 @@
 
     double precision :: dm_Mass, dm_Spin, dm_Vel  ! WIMP dark matter particle parameters
     integer :: num_isotopes   ! number of isotopes summed over (8 is all of them)
+    double precision :: coupleVal ! the value I will be assigning to the couplings when tested
     double precision :: dm_Scattered    ! (the output) number of scatters calculated at a given mass, spin, and velocity
 
     character (len=5) :: cplConsts(14) = [character(len=5) :: "c1-0", "c3-0", "c4-0", "c5-0", "c6-0", "c7-0", &
@@ -22,15 +23,16 @@
 
     num_isotopes = 8  ! number of isotopes super capt'n will loop over in the calculation: up to 8 isotopes
     dm_Spin = 0.5     ! WIMP dark matter spin
+    coupleVal = 1.65d-8
 
     print*
     print*, "Initializing Super Capt'n..."
 
     dm_Density = 0.3 ! GeV cm^{-3}
     ejecta_Mass = 5 ! m_Sun
-    ISM_Density = 3.73 * 10.**(-3) ! cm^{-3}
+    ISM_Density = 3.73d-3 ! cm^{-3}
     dist_SN = 300. ! pc
-    energy_SN = 8. * 10**50 ! erg
+    energy_SN = 8.d50 ! erg
     call supercaptn_init(dm_Density, ejecta_Mass, ISM_Density, dist_SN, energy_SN)
 
     print*
@@ -45,13 +47,13 @@
      ! set the one coupling 'cpl' to a default value, skipping c2-0 (the 2nd index is not used)
      ! zero out the old coupling so that only the desired coupling is non-zero
      if (cpl==1) then
-       call populate_array_super(1.65d-8, 1, 0)
+       call populate_array_super(coupleVal, 1, 0)
      else if (cpl==2) then
        call populate_array_super(0.d0, 1, 0)
-       call populate_array_super(1.65d-8, 3, 0)
+       call populate_array_super(coupleVal, 3, 0)
      else
        call populate_array_super(0.d0, cpl, 0)
-       call populate_array_super(1.65d-8, cpl+1, 0)
+       call populate_array_super(coupleVal, cpl+1, 0)
      endif
      
      print*
