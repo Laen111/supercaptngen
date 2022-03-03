@@ -58,8 +58,8 @@ module supermod
         R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
         t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.) / c0 ! include missing units of c to get t_0 in sec
 
-        ! Rshock = R_0 * ((t/t_0)**(-5.*lam_FE) + (t/t_0)**(-5.*lam_ST))**(-1./5.)
-        Rshock = 1.
+        Rshock = R_0 * ((t/t_0)**(-5.*lam_FE) + (t/t_0)**(-5.*lam_ST))**(-1./5.)
+        ! Rshock = 1.
 
     end function Rshock
 
@@ -79,8 +79,8 @@ module supermod
         R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
         t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.) / c0 ! include missing units of c to get t_0 in sec
 
-        ! Vshock = R_0/t_0 * (Rshock(t)/R_0)**6 * (lam_FE*(t/t_0)**(-5.*lam_FE-1.) + lam_ST*(t/t_0)**(-5.*lam_ST-1.))
-        Vshock = 1.
+        Vshock = R_0/t_0 * (Rshock(t)/R_0)**6 * (lam_FE*(t/t_0)**(-5.*lam_FE-1.) + lam_ST*(t/t_0)**(-5.*lam_ST-1.))
+        ! Vshock = 1.
     
     end function Vshock
 
@@ -224,7 +224,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                                     ! calculates the total number of q^2
                                     q_index = 1 + q_functype + term_W - 1 + floor((term_R-1.)/2.)
                                     prefactor_current = prefactor_functype * RFuncConst * WFuncConst * &
-                                                            yConverse_array_super(eli)**(term_W-1)
+                                                           (c0* yConverse_array_super(eli))**(term_W-1)
 
                                     ! check if term_R is even (in my index convention this corresponds to it having a v^2 in the term)
                                     ! v^2 = w^2 - q^2/(2mu_T)^2
@@ -260,30 +260,35 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
         J = AtomicSpin_super(eli)
 
         result = 0.d0
-        do w_pow=1,2
 
-            do q_pow=1,11
-                if ( prefactor_array(eli,q_pow,w_pow).ne.0. ) then
-                    ! the energy in the integral is given by delta function: E = (mdm * w^2)/2.
-                    ! the momentum transfer is defined using the energy of moving DM: E = q^2/(mdm*2)
-                    ! gives: q = mdm * w
-                    ! means I can squeeze both the q and w powers onto w, and leave mdm just on q powers:
-                    result = result + prefactor_array(eli,q_pow,w_pow) * mdm**(q_pow-1) * V_s**(w_pow+q_pow-2)
-                end if
-            end do !q_pow
-        end do !w_pow
+        print*,"Vshock = ", V_s, 'v = ', vel, 'time = ',Dist/vel, '\n'
 
-        ! CHECK THIS FOR UNITS AGAIN, IT PROBABLY NEEDS TO BE CHANGED TO GET PHI(v) OUT OF IT
-        DsigmaDe = result * (2 * mnuc*a)/(V_s**2 * (2*J+1))
+        if ((0.5*mdm*vel**2 .lt. 2*A**2 * mnuc**2 * mdm/(A*mnuc+mdm)**2*V_s**2)) then
 
-        scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
-        if ( eli.eq.1 ) then
-            scattered = scattered + 4./3.*pi*R_s**3*ISM * DsigmaDe
+            do w_pow=1,2
+
+                do q_pow=1,11
+                    if ( prefactor_array(eli,q_pow,w_pow).ne.0. ) then
+                        ! the energy in the integral is given by delta function: E = (mdm * w^2)/2.
+                        ! the momentum transfer is defined using the energy of moving DM: E = q^2/(mdm*2)
+                        ! gives: q = mdm * w
+                        ! means I can squeeze both the q and w powers onto w, and leave mdm just on q powers:
+                        result = result + prefactor_array(eli,q_pow,w_pow) * mdm**(q_pow-1) * V_s**(w_pow+q_pow-2)
+                    end if
+                end do !q_pow
+            end do !w_pow
+
+            ! CHECK THIS FOR UNITS AGAIN, IT PROBABLY NEEDS TO BE CHANGED TO GET PHI(v) OUT OF IT
+            DsigmaDe = result * (2. * mnuc*a*c0**2)/(V_s**2 * (2*J+1))
+
+            scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
+            if ( eli.eq.1 ) then
+                scattered = scattered + 4./3.*pi*R_s**3*ISM*c0**2 * DsigmaDe
+            end if
         end if
-
     end do !eli
 
-    scattered = scattered * (rhoX*V_s*vel)/(4*pi*Dist**2)
+    scattered = scattered * (rhoX*V_s*vel)/(4.*pi*Dist**2)
 
     ! if (capped .gt. 1.d100) then
     !   print*,"Capt'n General says: Oh my, it looks like you are capturing an", &
