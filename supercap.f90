@@ -163,8 +163,12 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     mdm = mx_in ! input in GeV
     j_chi = jx_in
     vel = vel_in * 1.d5 ! convert km s^{-1} to cm s^{-1}
+    time = Dist/vel ! time for DM to reach earth (traveling Dist to earth at upscattered velocity vel), in seconds
     R_s = Rshock(time) ! given in cm
     V_s = Vshock(time) ! given in cm s^{-1}
+
+    write(*,*) "DM velocity =", vel, "Time =", time, "R_shock =", R_s, "V_shock =", V_s
+    write(*,*) "DM kinetic energy =", 0.5*mdm*vel**2
 
     do eli = 1, niso
         do q_pow = 1, 11
@@ -275,10 +279,10 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
         result = 0.d0
 
-        write(*,*) "DM velocity =", vel, "Time =", time, "R_shock =", R_s, "V_shock =", V_s
+        write(*,*) "Element: ", isotopes_super(eli), " Maximum energy =", 2 * mdm * (A*mnuc*V_s/(A*mnuc+mdm))**2
 
         ! condition on the maximal energy the DM can get from scattering off the SNe as given by Chris
-        ! 1/2 * m_A * V_s^2 * (4*m_A/m_x)
+        ! 1/2 * m_A * V_s^2 * 4 * m_A*m_x/(m_A+m_x)^2
         if ((0.5*mdm*vel**2 .lt. 2*A**2 * mnuc**2 * mdm/(A*mnuc+mdm)**2*V_s**2)) then
 
             do w_pow=1,2
