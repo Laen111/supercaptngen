@@ -42,6 +42,16 @@ module supermod
 
     contains
 
+    subroutine novaParameters(lam_FE, lam_ST, R_0, t_0)
+    implicit none
+    double precision :: lam_FE, Lam_ST, R_0, t_0
+        ! from Chris' notes
+        lam_FE = 4./7.
+        lam_ST = 2./5.
+        R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
+        t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.) / c0 ! include missing units of c to get t_0 in sec
+    end subroutine novaParameters
+
     ! This gives you the radius of the SNe shockwave front as a function of time
     ! NEEDS TO BE OUTPUT AS cm!
     function Rshock(t)
@@ -52,11 +62,14 @@ module supermod
         double precision :: lam_FE, lam_ST
         double precision :: R_0, t_0
         
-        ! from Chris' notes
-        lam_FE = 4./7.
-        lam_ST = 2./5.
-        R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
-        t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.) / c0 ! include missing units of c to get t_0 in sec
+        ! ! from Chris' notes
+        ! lam_FE = 4./7.
+        ! lam_ST = 2./5.
+        ! R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
+        ! t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.) / c0 ! include missing units of c to get t_0 in sec
+
+        ! retrieve lam_FE, lam_ST, R_0, and t_0 parameters
+        call novaParameters(lam_FE, lam_ST, R_0, t_0)
 
         Rshock = R_0 * ((t/t_0)**(-5.*lam_FE) + (t/t_0)**(-5.*lam_ST))**(-1./5.)
         ! Rshock = 1.
@@ -73,19 +86,20 @@ module supermod
         double precision :: lam_FE, lam_ST
         double precision :: R_0, t_0
         
-        ! from Chris' notes
-        lam_FE = 4./7.
-        lam_ST = 2./5.
-        R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
-        t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.) / c0 ! include missing units of c to get t_0 in sec
+        ! ! from Chris' notes
+        ! lam_FE = 4./7.
+        ! lam_ST = 2./5.
+        ! R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
+        ! t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.) / c0 ! include missing units of c to get t_0 in sec
+
+        ! retrieve lam_FE, lam_ST, R_0, and t_0 parameters
+        call novaParameters(lam_FE, lam_ST, R_0, t_0)
 
         Vshock = R_0/t_0 * (Rshock(t)/R_0)**6 * (lam_FE*(t/t_0)**(-5.*lam_FE-1.) + lam_ST*(t/t_0)**(-5.*lam_ST-1.))
         ! Vshock = 1.
     
     end function Vshock
 
-    ! NOTE TO SELF:
-    ! FIND A BETTER WAY TO CALULATE R AND V SHOCK, CURRENTLY HAVE DUPLICATED CODE THAT COULD LEAD TO ISSUES IN BUGFIXING LATER
 end module supermod
 
 
