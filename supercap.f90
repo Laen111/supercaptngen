@@ -137,7 +137,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     double precision, intent(out) :: scattered !this is the output
 
     integer eli, funcType, tau, taup, term_R, term_W, q_pow, w_pow ! loop indicies
-    double precision :: a, J, j_chi, mu_T, vel, V_s, R_s    ! parameters
+    double precision :: a, J, j_chi, mu_T, vel, time, V_s, R_s    ! parameters
     double precision :: result, DsigmaDe    ! used to tally results
 
     ! parameters used in prefactor calculation
@@ -149,8 +149,9 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     mdm = mx_in ! input in GeV
     j_chi = jx_in
     vel = vel_in * 10.**(5) ! convert km s^{-1} to cm s^{-1}
-    R_s = Rshock(Dist/vel) ! given in cm
-    V_s = Vshock(Dist/vel) ! given in cm s^{-1}
+    time = Dist/vel ! time for DM to reach earth (traveling Dist to earth at upscattered velocity vel)
+    R_s = Rshock(time) ! given in cm
+    V_s = Vshock(time) ! given in cm s^{-1}
 
     do eli = 1, niso
         do q_pow = 1, 11
@@ -261,8 +262,10 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
         result = 0.d0
 
-        print*,"Vshock = ", V_s, 'v = ', vel, 'time = ',Dist/vel, '\n'
+        write(*,*) "DM velocity =", vel, "Time =", time, "R_shock =", R_s, "V_shock =", V_s
 
+        ! condition on the maximal energy the DM can get from scattering off the SNe as given by Chris
+        ! 1/2 * m_A * V_s^2 * (4*m_A/m_x)
         if ((0.5*mdm*vel**2 .lt. 2*A**2 * mnuc**2 * mdm/(A*mnuc+mdm)**2*V_s**2)) then
 
             do w_pow=1,2
