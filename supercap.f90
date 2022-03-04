@@ -291,7 +291,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
         ! condition on the maximal energy the DM can get from scattering off the SNe as given by Chris
         ! 1/2 * m_A * V_s^2 * 4 * m_A*m_x/(m_A+m_x)^2
-        if (((0.5*mdm*vel**2 .lt. 2*A**2 * mnuc**2 * mdm/(A*mnuc+mdm)**2*V_s**2)) .and. (age .gt. Dist/vel)) then
+        if ((0.5*mdm*vel**2 .lt. 2*A**2 * mnuc**2 * mdm/(A*mnuc+mdm)**2*V_s**2)) then
 
             do w_pow=1,2
 
