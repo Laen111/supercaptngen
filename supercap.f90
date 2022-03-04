@@ -16,20 +16,22 @@ module supermod
     double precision, parameter :: mnuc=0.938 !GeV
     double precision, parameter :: pi=3.141592653
     double precision, parameter  :: year= 3.154d7 !seconds
-    double precision, parameter :: AtomicNumber_super(8) = (/ 1., 4., 12., 20., 24., 28., 32., 56. /) !the isotopes the catena paper uses
-    character (len=4) :: isotopes_super(8) = [character(len=4) :: "H", "He4", "C12", "Ne20", "Mg24", "Si28", "S32", "Fe56"] !the isotopes in text form to match against the W functions
-    double precision, parameter :: AtomicSpin_super(8) = (/ 0.5, & ! {}^{1}\text{H}
+    double precision, parameter :: AtomicNumber_super(9) = (/ 1., 4., 12., 16., 20., 24., 28., 32., 56. /) !the isotopes the catena paper uses
+    character (len=4) :: isotopes_super(9) = [character(len=4) :: "H", "He4", "C12", "O16", "Ne20", "Mg24", "Si28", "S32", "Fe56"] !the isotopes in text form to match against the W functions
+    double precision, parameter :: AtomicSpin_super(9) = (/ 0.5, & ! {}^{1}\text{H}
                                                             0., & ! {}^{4}\text{He}
                                                             0., & ! {}^{12}\text{C}
+                                                            0., & ! {}^{16}\text{O}
                                                             0., & ! {}^{20}\text{Ne}
                                                             0., & ! {}^{24}\text{Mg}
                                                             0., & ! {}^{28}\text{Si}
                                                             0., & ! {}^{32}\text{S}
                                                             0. & ! {}^{56}\text{Fe}
                                                             /) !spins pulled from https://physics.nist.gov/PhysRefData/Handbook/element_name.htm
-    double precision, parameter :: MassFrac_super(8) = (/   0.493, & ! {}^{1}\text{H}
+    double precision, parameter :: MassFrac_super(9) = (/   0.493, & ! {}^{1}\text{H}
                                                             0.35, & ! {}^{4}\text{He}
                                                             0.015, & ! {}^{12}\text{C}
+                                                            0.1, & ! {}^{16}\text{O}         note that you'll need to get the mass fractions that Chris uses to include oxygen
                                                             0.005, & ! {}^{20}\text{Ne}
                                                             0.005, & ! {}^{24}\text{Mg}
                                                             0.02, & ! {}^{28}\text{Si}
@@ -37,8 +39,8 @@ module supermod
                                                             0.007 & ! {}^{56}\text{Fe}
                                                             /) ! the isotopic abundances from Chris' notes, sourced from SNe sims: https://arxiv.org/abs/astro-ph/0112478
     double precision :: coupling_Array(14,2)
-    double precision :: W_array_super(8,8,2,2,7)
-    double precision :: yConverse_array_super(8)
+    double precision :: W_array_super(8,9,2,2,7)
+    double precision :: yConverse_array_super(9)
 
     double precision :: mdm, rhoX, Mej, ISM, Dist, Esn, Age
 
@@ -350,11 +352,11 @@ subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in)
 
     ! this array stores each of the constants of the W polynomials from paper arxiv:1501.03729's appendix individually
     ! array index m handles the 8 varients of the W functions in order [M, S", S', P", MP", P', Delta, S'Delta]
-    ! index i handles the 8 isotopes [H, He4, C12, Ne20, Mg24, Si28, S32, Fe56]
+    ! index i handles the 8 isotopes [H, He4, C12, O16, Ne20, Mg24, Si28, S32, Fe56]
     ! index j & k handle the two superscripts for each W function, each taking values of 0 and 1
     ! index L determines the power of each constant ranging from y^0 to y^6
     do m=1,8
-        do i=1,8
+        do i=1,9
             do j=1,2
                 do k=1,2
                     do l=1,7
@@ -387,7 +389,7 @@ subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in)
                                 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0/), (/14, 2/))
 
     ! yconv comes from arxiv:1501.03729 page 10, where yconv = (b/{2 hbar c})^2
-    do i = 1, 8
+    do i = 1, 9
         yConverse_array_super(i) = 264.114/(45.d0*AtomicNumber_super(i)**(-1./3.)-25.d0*AtomicNumber_super(i)**(-2./3.))
     end do
 end subroutine supercaptn_init
