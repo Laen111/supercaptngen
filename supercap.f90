@@ -174,152 +174,151 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     !write(*,*) "DM kinetic energy =", 0.5*mdm*vel**2
 
     if (time .lt. 0.d0) then
-      scattered = 0.d0
+        scattered = 0.d0
     else
-
-
-    do eli = 1, niso
-        do q_pow = 1, 11
-            do w_pow = 1, 2
-                prefactor_array(eli,q_pow,w_pow) = 0.d0
+        do eli = 1, niso
+            do q_pow = 1, 11
+                do w_pow = 1, 2
+                    prefactor_array(eli,q_pow,w_pow) = 0.d0
+                end do
             end do
         end do
-    end do
 
-    ! First I set the entries in prefactor_array(niso,11,2)
-    ! These are the constants that mulitply the corresonding integral evaluation
-    do eli=1,niso !isotopeChosen, isotopeChosen
-        ! I'll need mu_T to include in the prefactor when there is a v^2 term
-        a = AtomicNumber_super(eli)
-        mu_T = (mnuc*a*mdm)/(mnuc*a+mdm)
+        ! First I set the entries in prefactor_array(niso,11,2)
+        ! These are the constants that mulitply the corresonding integral evaluation
+        do eli=1,niso !isotopeChosen, isotopeChosen
+            ! I'll need mu_T to include in the prefactor when there is a v^2 term
+            a = AtomicNumber_super(eli)
+            mu_T = (mnuc*a*mdm)/(mnuc*a+mdm)
 
-        ! the current response function type in order: M, S2, S1, P2, MP2, P1, D, S1D
-        do funcType = 1,8
+            ! the current response function type in order: M, S2, S1, P2, MP2, P1, D, S1D
+            do funcType = 1,8
 
-            ! contribution to q^2 count from sum over function types
-            q_functype = 0
-            prefactor_functype = 1.
-            if ( functype.gt.3 ) then
-                q_functype = 1
-                prefactor_functype = 1./mnuc**2
-            end if
+                ! contribution to q^2 count from sum over function types
+                q_functype = 0
+                prefactor_functype = 1.
+                if ( functype.gt.3 ) then
+                    q_functype = 1
+                    prefactor_functype = 1./mnuc**2
+                end if
 
-            ! the first index on each response function
-            do tau=1,2
+                ! the first index on each response function
+                do tau=1,2
 
-                ! the second index on each response function
-                do taup=1,2
+                    ! the second index on each response function
+                    do taup=1,2
 
-                    ! the possible y-terms for each W function in order: y^0, y^1, y^2, y^3, y^4, y^5, y^6
-                    do term_W = 1,7
+                        ! the possible y-terms for each W function in order: y^0, y^1, y^2, y^3, y^4, y^5, y^6
+                        do term_W = 1,7
 
-                        WFuncConst = W_array_super(funcType,eli,tau,taup,term_W)
+                            WFuncConst = W_array_super(funcType,eli,tau,taup,term_W)
 
-                        ! skip if the result gets multiplied by zero in the WFunction
-                        if (WFuncConst.ne.0.) then
+                            ! skip if the result gets multiplied by zero in the WFunction
+                            if (WFuncConst.ne.0.) then
 
-                            ! the possible terms for each R function in order: c, v2, q2, v2q2, q4, v2q4
-                            do term_R = 1,6
+                                ! the possible terms for each R function in order: c, v2, q2, v2q2, q4, v2q4
+                                do term_R = 1,6
 
-                                ! pick out the appropriate term's constant from a given R function of tau, taup, and term_R
-                                ! currently passes mnuc, and c0 - these are constants that could be shared to it through the shared module?
-                                select case (funcType)
-                                case (1)
-                                    RFuncConst = RM(mnuc,c0,tau,taup,term_R-1,j_chi,coupling_Array) !!!!!!!!!!!!!!! in the R functions the R term starts at zero, should change it to start at 1 like other Fortran things do for consistency
-                                case (2)
-                                    RFuncConst = RS2(mnuc,c0,tau,taup,term_R-1,j_chi,coupling_Array)
-                                case (3)
-                                    RFuncConst = RS1(mnuc,c0,tau,taup,term_R-1,j_chi,coupling_Array)
-                                case (4)
-                                    RFuncConst = RP2(mnuc,tau,taup,term_R-1,j_chi,coupling_Array)
-                                case (5)
-                                    RFuncConst = RMP2(mnuc,tau,taup,term_R-1,j_chi,coupling_Array)
-                                case (6)
-                                    RFuncConst = RP1(mnuc,tau,taup,term_R-1,j_chi,coupling_Array)
-                                case (7)
-                                    RFuncConst = RD(mnuc,tau,taup,term_R-1,j_chi,coupling_Array)
-                                case (8)
-                                    RFuncConst = RS1D(tau,taup,term_R-1,j_chi,coupling_Array)
-                                case default
-                                    stop "Um, I ran out of R functions to choose from?"
-                                end select
+                                    ! pick out the appropriate term's constant from a given R function of tau, taup, and term_R
+                                    ! currently passes mnuc, and c0 - these are constants that could be shared to it through the shared module?
+                                    select case (funcType)
+                                    case (1)
+                                        RFuncConst = RM(mnuc,c0,tau,taup,term_R-1,j_chi,coupling_Array) !!!!!!!!!!!!!!! in the R functions the R term starts at zero, should change it to start at 1 like other Fortran things do for consistency
+                                    case (2)
+                                        RFuncConst = RS2(mnuc,c0,tau,taup,term_R-1,j_chi,coupling_Array)
+                                    case (3)
+                                        RFuncConst = RS1(mnuc,c0,tau,taup,term_R-1,j_chi,coupling_Array)
+                                    case (4)
+                                        RFuncConst = RP2(mnuc,tau,taup,term_R-1,j_chi,coupling_Array)
+                                    case (5)
+                                        RFuncConst = RMP2(mnuc,tau,taup,term_R-1,j_chi,coupling_Array)
+                                    case (6)
+                                        RFuncConst = RP1(mnuc,tau,taup,term_R-1,j_chi,coupling_Array)
+                                    case (7)
+                                        RFuncConst = RD(mnuc,tau,taup,term_R-1,j_chi,coupling_Array)
+                                    case (8)
+                                        RFuncConst = RS1D(tau,taup,term_R-1,j_chi,coupling_Array)
+                                    case default
+                                        stop "Um, I ran out of R functions to choose from?"
+                                    end select
 
-                                ! skip if the result gets multiplied by zero in the RFunction
-                                if (RFuncConst.ne.0.) then
+                                    ! skip if the result gets multiplied by zero in the RFunction
+                                    if (RFuncConst.ne.0.) then
 
-                                    ! calculates the total number of q^2
-                                    q_index = 1 + q_functype + term_W - 1 + floor((term_R-1.)/2.)
-                                    prefactor_current = prefactor_functype * RFuncConst * WFuncConst * &
-                                                           (c0* yConverse_array_super(eli))**(term_W-1)
+                                        ! calculates the total number of q^2
+                                        q_index = 1 + q_functype + term_W - 1 + floor((term_R-1.)/2.)
+                                        prefactor_current = prefactor_functype * RFuncConst * WFuncConst * &
+                                                            (c0* yConverse_array_super(eli))**(term_W-1)
 
-                                    ! check if term_R is even (in my index convention this corresponds to it having a v^2 in the term)
-                                    ! v^2 = w^2 - q^2/(2mu_T)^2
-                                    if ( mod(term_R,2).eq.0 ) then
-                                        ! this is the -q^2/(2mu_T)^2 contribution
-                                        ! it has one extra q^2 contribution compared to the current W & R function contributions
-                                        ! TRACK THIS LINE, SHOULD BE ONLY PLACE WHERE NEGATIVES APPEAR?
-                                        prefactor_array(eli,q_index+1,1) = prefactor_array(eli,q_index+1,1) - prefactor_current * &
-                                            (c0**2/(4.*mu_T**2)) ! The Rfunctions are programmed with the 1/c0^2 in their v_perp^2 term (so I need to un-correct it for the- q^2/(2*mu_T)^2, and leave it be for the w^2/c^2)
+                                        ! check if term_R is even (in my index convention this corresponds to it having a v^2 in the term)
+                                        ! v^2 = w^2 - q^2/(2mu_T)^2
+                                        if ( mod(term_R,2).eq.0 ) then
+                                            ! this is the -q^2/(2mu_T)^2 contribution
+                                            ! it has one extra q^2 contribution compared to the current W & R function contributions
+                                            ! TRACK THIS LINE, SHOULD BE ONLY PLACE WHERE NEGATIVES APPEAR?
+                                            prefactor_array(eli,q_index+1,1) = prefactor_array(eli,q_index+1,1) &
+                                                - prefactor_current * (c0**2/(4.*mu_T**2)) ! The Rfunctions are programmed with the 1/c0^2 in their v_perp^2 term (so I need to un-correct it for the- q^2/(2*mu_T)^2, and leave it be for the w^2/c^2)
 
-                                        ! this is the +w^2 contribution
-                                        ! it has the same q^2 contribution, but has a v_perp^2 contribution
-                                        prefactor_array(eli,q_index,2) = prefactor_array(eli,q_index,2) + prefactor_current
+                                            ! this is the +w^2 contribution
+                                            ! it has the same q^2 contribution, but has a v_perp^2 contribution
+                                            prefactor_array(eli,q_index,2) = prefactor_array(eli,q_index,2) + prefactor_current
 
-                                    else
-                                        prefactor_array(eli,q_index,1) = prefactor_array(eli,q_index,1) + prefactor_current
+                                        else
+                                            prefactor_array(eli,q_index,1) = prefactor_array(eli,q_index,1) + prefactor_current
 
+                                        end if
                                     end if
-                                end if
-                            end do !term_R
+                                end do !term_R
+                            end if
+                        end do !term_W
+                    end do !taup
+                end do !tau
+            end do !functype
+        end do !eli
+
+        ! now with all the prefactors computed, any 0.d0 entries in prefactor_array means that we can skip that integral evaluation!
+        scattered = 0.d0
+        do eli=1,niso
+
+            a = AtomicNumber_super(eli)
+            J = AtomicSpin_super(eli)
+
+            result = 0.d0
+
+            !write(*,*) "Element: ", isotopes_super(eli), " Maximum energy =", 2. * mdm * (A*mnuc*V_s/c0/(A*mnuc+mdm))**2
+
+            ! condition on the maximal energy the DM can get from scattering off the SNe as given by Chris
+            ! 1/2 * m_A * V_s^2 * 4 * m_A*m_x/(m_A+m_x)^2
+            if ((0.5*mdm*vel**2 .lt. 2*A**2 * mnuc**2 * mdm/(A*mnuc+mdm)**2*V_s**2)) then
+
+                do w_pow=1,2
+
+                    do q_pow=1,11
+                        if ( prefactor_array(eli,q_pow,w_pow).ne.0. ) then
+                            ! the energy in the integral is given by delta function: E = (mdm * w^2)/2.
+                            ! the momentum transfer is defined using the energy of moving DM: E = q^2/(mdm*2)
+                            ! gives: q = mdm * w
+                            ! means I can squeeze both the q and w powers onto w, and leave mdm just on q powers:
+                            result = result + prefactor_array(eli,q_pow,w_pow) * mdm**(q_pow-1) * (V_s/c0)**(w_pow+q_pow-2)
                         end if
-                    end do !term_W
-                end do !taup
-            end do !tau
-        end do !functype
-    end do !eli
+                    end do !q_pow
+                end do !w_pow
 
-    ! now with all the prefactors computed, any 0.d0 entries in prefactor_array means that we can skip that integral evaluation!
-    scattered = 0.d0
-    do eli=1,niso
+                ! CHECK THIS FOR UNITS AGAIN, IT PROBABLY NEEDS TO BE CHANGED TO GET PHI(v) OUT OF IT
+                DsigmaDe = result * (2. * mnuc*a*c0**2)/(V_s**2 * (2*J+1))*hbarc**2
 
-        a = AtomicNumber_super(eli)
-        J = AtomicSpin_super(eli)
-
-        result = 0.d0
-
-        !write(*,*) "Element: ", isotopes_super(eli), " Maximum energy =", 2. * mdm * (A*mnuc*V_s/c0/(A*mnuc+mdm))**2
-
-        ! condition on the maximal energy the DM can get from scattering off the SNe as given by Chris
-        ! 1/2 * m_A * V_s^2 * 4 * m_A*m_x/(m_A+m_x)^2
-        if ((0.5*mdm*vel**2 .lt. 2*A**2 * mnuc**2 * mdm/(A*mnuc+mdm)**2*V_s**2)) then
-
-            do w_pow=1,2
-
-                do q_pow=1,11
-                    if ( prefactor_array(eli,q_pow,w_pow).ne.0. ) then
-                        ! the energy in the integral is given by delta function: E = (mdm * w^2)/2.
-                        ! the momentum transfer is defined using the energy of moving DM: E = q^2/(mdm*2)
-                        ! gives: q = mdm * w
-                        ! means I can squeeze both the q and w powers onto w, and leave mdm just on q powers:
-                        result = result + prefactor_array(eli,q_pow,w_pow) * mdm**(q_pow-1) * (V_s/c0)**(w_pow+q_pow-2)
-                    end if
-                end do !q_pow
-            end do !w_pow
-
-            ! CHECK THIS FOR UNITS AGAIN, IT PROBABLY NEEDS TO BE CHANGED TO GET PHI(v) OUT OF IT
-            DsigmaDe = result * (2. * mnuc*a*c0**2)/(V_s**2 * (2*J+1))*hbarc**2
-
-            scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
-            if ( eli.eq.1 ) then
-                scattered = scattered + 4./3.*pi*R_s**3*ISM*c0**2 * DsigmaDe
+                scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
+                if ( eli.eq.1 ) then
+                    scattered = scattered + 4./3.*pi*R_s**3*ISM*c0**2 * DsigmaDe
+                end if
             end if
-        end if
-    end do !eli
+        end do !eli
 
-    scattered = scattered * (rhoX*V_s*vel)/(4.*pi*Dist**2) !natural units
-    scattered = scattered/hbarc**3 !recover units
+        scattered = scattered * (rhoX*V_s*vel)/(4.*pi*Dist**2) !natural units
+        scattered = scattered/hbarc**3 !recover units
 
-end if !End condition on t > 0
+    end if !End condition on t > 0
+
     ! if (capped .gt. 1.d100) then
     !   print*,"Capt'n General says: Oh my, it looks like you are capturing an", &
     !     "infinite amount of dark matter in the Sun. Best to look into that."
