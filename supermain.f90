@@ -29,7 +29,7 @@
     print*, "Initializing Super Capt'n..."
 
     dm_Density = 0.3 ! GeV cm^{-3}
-    ejecta_Mass = 5 ! m_Sun
+    ejecta_Mass = 5. ! m_Sun
     ISM_Density = 3.73d-3 ! cm^{-3}
     dist_SN = 300. ! pc
     energy_SN = 8.d50 ! erg
