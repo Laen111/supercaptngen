@@ -23,7 +23,8 @@
 
     num_isotopes = 8  ! number of isotopes super capt'n will loop over in the calculation: up to 8 isotopes
     dm_Spin = 0.5     ! WIMP dark matter spin
-    coupleVal = 1.65d-8
+    ! coupleVal = 1.65d-8
+    coupleVal = sqrt(3.14*1.d-30)/(1.*1.973267d-44) ! get a coupling value in GeV^-2 for a specified xSection in cm^2
 
     print*
     print*, "Initializing Super Capt'n..."
@@ -38,7 +39,7 @@
     print*
     print*, "Running Super Capt'n..."
 
-   do cpl=1, 14
+   do cpl=1, 1!4
      ! one unique filename for each coupling constant
      filename = "Oper_"//trim(cplConsts(cpl))//"_Phi.dat"
      open(55,file=filename)
@@ -58,10 +59,10 @@
      
      print*
      print*, "Running coupling constant: ", cplConsts(cpl)
-     do i = 1,11
-       dm_Mass = 10**(dble(i-1)/5.)
+     do i = 1,1!1
+       dm_Mass = 1!10**(dble(i-1)/5.)
        do j = 1,11
-        dm_Vel = 10**(dble(j-1)/5.)
+        dm_Vel = 10**(dble(j-1)/10. + 3.) ! chris' notes test the range of velocities from 10^8 to 10^9 cm s^-1 for SI xSec
         call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, dm_Scattered)
         write(55,*) dm_Mass, dm_Vel, dm_Scattered
         ! Use this to check for negative scattering numbers (couplings 5, 7, 8, 13, 14)
