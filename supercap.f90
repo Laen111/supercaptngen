@@ -10,10 +10,11 @@
 module supermod
     implicit none
     double precision, parameter :: hbar=6.582d-25 !GeV*s
+    double precision, parameter :: hbarc=1.97d-14 !GeV*cm
     double precision, parameter :: c0=2.99792458d10 !cm*s^-1
     double precision, parameter :: mnuc=0.938 !GeV
     double precision, parameter :: pi=3.141592653
-    
+    double precision, parameter  :: year= 3.154d7 !seconds
     double precision, parameter :: AtomicNumber_super(8) = (/ 1., 4., 12., 20., 24., 28., 32., 56. /) !the isotopes the catena paper uses
     character (len=4) :: isotopes_super(8) = [character(len=4) :: "H", "He4", "C12", "Ne20", "Mg24", "Si28", "S32", "Fe56"] !the isotopes in text form to match against the W functions
     double precision, parameter :: AtomicSpin_super(8) = (/ 0.5, & ! {}^{1}\text{H}
@@ -38,7 +39,7 @@ module supermod
     double precision :: W_array_super(8,8,2,2,7)
     double precision :: yConverse_array_super(8)
 
-    double precision :: mdm, rhoX, Mej, ISM, Dist, Esn
+    double precision :: mdm, rhoX, Mej, ISM, Dist, Esn,Age
 
     contains
 
@@ -50,6 +51,7 @@ module supermod
         lam_ST = 2./5.
         R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
         t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.) / c0 ! include missing units of c to get t_0 in sec
+        print*, 't_0',t_0
     end subroutine novaParameters
 
     ! This gives you the radius of the SNe shockwave front as a function of time
@@ -58,10 +60,10 @@ module supermod
         implicit none
         double precision :: Rshock
         double precision, intent(in) :: t
-        
+
         double precision :: lam_FE, lam_ST
         double precision :: R_0, t_0
-        
+
         ! ! from Chris' notes
         ! lam_FE = 4./7.
         ! lam_ST = 2./5.
@@ -85,7 +87,7 @@ module supermod
 
         double precision :: lam_FE, lam_ST
         double precision :: R_0, t_0
-        
+
         ! ! from Chris' notes
         ! lam_FE = 4./7.
         ! lam_ST = 2./5.
@@ -97,7 +99,7 @@ module supermod
 
         Vshock = R_0/t_0 * (Rshock(t)/R_0)**6 * (lam_FE*(t/t_0)**(-5.*lam_FE-1.) + lam_ST*(t/t_0)**(-5.*lam_ST-1.))
         ! Vshock = 1.
-    
+
     end function Vshock
 
 end module supermod
@@ -142,7 +144,7 @@ end subroutine populate_array_super
 ! mx_in: dark matter mass in GeV
 ! jx_in: dark matter spin
 ! vel_in: dark matter final velocity in km s^{-1}
-! 
+!
 subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     use supermod
     implicit none
@@ -163,12 +165,17 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     mdm = mx_in ! input in GeV
     j_chi = jx_in
     vel = vel_in * 1.d5 ! convert km s^{-1} to cm s^{-1}
-    time = Dist/vel ! time for DM to reach earth (traveling Dist to earth at upscattered velocity vel), in seconds
+    time = age - Dist/vel ! time for DM to reach earth (traveling Dist to earth at upscattered velocity vel), in seconds
     R_s = Rshock(time) ! given in cm
     V_s = Vshock(time) ! given in cm s^{-1}
 
     write(*,*) "DM velocity =", vel, "Time =", time, "R_shock =", R_s, "V_shock =", V_s
-    write(*,*) "DM kinetic energy =", 0.5*mdm*vel**2
+    write(*,*) "DM kinetic energy =", 0.5*mdm*vel**2/c0**2
+
+    if (time .lt. 0.d0) then
+      scattered = 0.d0
+    else
+
 
     do eli = 1, niso
         do q_pow = 1, 11
@@ -204,7 +211,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
                     ! the possible y-terms for each W function in order: y^0, y^1, y^2, y^3, y^4, y^5, y^6
                     do term_W = 1,7
-                        
+
                         WFuncConst = W_array_super(funcType,eli,tau,taup,term_W)
 
                         ! skip if the result gets multiplied by zero in the WFunction
@@ -252,11 +259,11 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                                         ! TRACK THIS LINE, SHOULD BE ONLY PLACE WHERE NEGATIVES APPEAR?
                                         prefactor_array(eli,q_index+1,1) = prefactor_array(eli,q_index+1,1) - prefactor_current * &
                                             (c0**2/(4.*mu_T**2)) ! The Rfunctions are programmed with the 1/c0^2 in their v_perp^2 term (so I need to un-correct it for the- q^2/(2*mu_T)^2, and leave it be for the w^2/c^2)
-                                        
+
                                         ! this is the +w^2 contribution
                                         ! it has the same q^2 contribution, but has a v_perp^2 contribution
                                         prefactor_array(eli,q_index,2) = prefactor_array(eli,q_index,2) + prefactor_current
-                                        
+
                                     else
                                         prefactor_array(eli,q_index,1) = prefactor_array(eli,q_index,1) + prefactor_current
 
@@ -279,11 +286,11 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
         result = 0.d0
 
-        write(*,*) "Element: ", isotopes_super(eli), " Maximum energy =", 2 * mdm * (A*mnuc*V_s/(A*mnuc+mdm))**2
+        write(*,*) "Element: ", isotopes_super(eli), " Maximum energy =", 2. * mdm * (A*mnuc*V_s/c0/(A*mnuc+mdm))**2
 
         ! condition on the maximal energy the DM can get from scattering off the SNe as given by Chris
         ! 1/2 * m_A * V_s^2 * 4 * m_A*m_x/(m_A+m_x)^2
-        if ((0.5*mdm*vel**2 .lt. 2*A**2 * mnuc**2 * mdm/(A*mnuc+mdm)**2*V_s**2)) then
+        if (((0.5*mdm*vel**2 .lt. 2*A**2 * mnuc**2 * mdm/(A*mnuc+mdm)**2*V_s**2)) .and. (age .gt. Dist/vel)) then
 
             do w_pow=1,2
 
@@ -293,13 +300,13 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                         ! the momentum transfer is defined using the energy of moving DM: E = q^2/(mdm*2)
                         ! gives: q = mdm * w
                         ! means I can squeeze both the q and w powers onto w, and leave mdm just on q powers:
-                        result = result + prefactor_array(eli,q_pow,w_pow) * mdm**(q_pow-1) * V_s**(w_pow+q_pow-2)
+                        result = result + prefactor_array(eli,q_pow,w_pow) * mdm**(q_pow-1) * (V_s/c0)**(w_pow+q_pow-2)
                     end if
                 end do !q_pow
             end do !w_pow
 
             ! CHECK THIS FOR UNITS AGAIN, IT PROBABLY NEEDS TO BE CHANGED TO GET PHI(v) OUT OF IT
-            DsigmaDe = result * (2. * mnuc*a*c0**2)/(V_s**2 * (2*J+1))
+            DsigmaDe = result * (2. * mnuc*a*c0**2)/(V_s**2 * (2*J+1))*hbarc**2
 
             scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
             if ( eli.eq.1 ) then
@@ -310,33 +317,35 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
     scattered = scattered * (rhoX*V_s*vel)/(4.*pi*Dist**2)
 
+end if !End condition on t > 0
     ! if (capped .gt. 1.d100) then
     !   print*,"Capt'n General says: Oh my, it looks like you are capturing an", &
     !     "infinite amount of dark matter in the Sun. Best to look into that."
     ! end if
 end subroutine supercaptn
 
-subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in)
+subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in,Age_in)
     ! input velocities in km/s, not cm/s!!!
     use supermod
     implicit none
-    double precision, intent(in) :: rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in
+    double precision, intent(in) :: rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in
 
     integer :: i, j, k, l, m
     character (len=2) :: terms(7) = [character(len=2) :: "y0", "y1", "y2", "y3", "y4", "y5", "y6"]
     real :: WM, WS2, WS1, WP2, WMP2, WP1, WD, WS1D
-    
+
     ! load values into module
     rhoX = rhoX_in ! loaded in GeV cm^{-3}
     Mej = Mej_in * 1.98841d30 * 5.60958860d26! convert Solar Masses to kg to GeV c^{-2}
     ISM = ISM_in ! loaded in cm^{-3}
     Dist = Dist_in * 3.08567758149d18 ! convert pc to cm
+    Age = Age_in*year !seconds
     ! this might need to be in GeV, check the Vshock and Rshock functions to see if units work out in ergs
     Esn = Esn_in * 624.151 ! convert ergs to GeV
 
     ! mass fraction is given by MassFrac_super, from SNe sims
     ! it doesn't vary with a radial coordinate, so it is only a fixed frac per isotope
-    
+
     ! this array stores each of the constants of the W polynomials from paper arxiv:1501.03729's appendix individually
     ! array index m handles the 8 varients of the W functions in order [M, S", S', P", MP", P', Delta, S'Delta]
     ! index i handles the 8 isotopes [H, He4, C12, Ne20, Mg24, Si28, S32, Fe56]

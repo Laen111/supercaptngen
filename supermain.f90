@@ -9,10 +9,10 @@
     implicit none
     character*300 :: filename ! writing filename
     integer :: cpl, i, j      ! loop indicies
+    double precision, parameter :: pi=3.141592653, hbarc = 1.97d-14
+    double precision :: dm_Density, ejecta_Mass, ISM_Density, dist_SN, energy_SN,age_SN     ! initialization parameters
 
-    double precision :: dm_Density, ejecta_Mass, ISM_Density, dist_SN, energy_SN    ! initialization parameters
-
-    double precision :: dm_Mass, dm_Spin, dm_Vel  ! WIMP dark matter particle parameters
+    double precision :: dm_Mass, dm_Spin, dm_Vel ! WIMP dark matter particle parameters
     integer :: num_isotopes   ! number of isotopes summed over (8 is all of them)
     double precision :: coupleVal ! the value I will be assigning to the couplings when tested
     double precision :: dm_Scattered    ! (the output) number of scatters calculated at a given mass, spin, and velocity
@@ -24,7 +24,8 @@
     num_isotopes = 8  ! number of isotopes super capt'n will loop over in the calculation: up to 8 isotopes
     dm_Spin = 0.5     ! WIMP dark matter spin
     ! coupleVal = 1.65d-8
-    coupleVal = sqrt(3.14*1.d-30)/(1.*1.973267d-44) ! get a coupling value in GeV^-2 for a specified xSection in cm^2
+    ! coupleVal = sqrt(3.14*1.d-30)/(1.*1.973267d-44) ! get a coupling value in GeV^-2 for a specified xSection in cm^2
+    coupleVal = sqrt(pi*1.d-30/(1./.4))/hbarc
 
     print*
     print*, "Initializing Super Capt'n..."
@@ -34,7 +35,8 @@
     ISM_Density = 3.73d-3 ! cm^{-3}
     dist_SN = 300. ! pc
     energy_SN = 8.d50 ! erg
-    call supercaptn_init(dm_Density, ejecta_Mass, ISM_Density, dist_SN, energy_SN)
+    age_SN = 6.8d4 ! years
+    call supercaptn_init(dm_Density, ejecta_Mass, ISM_Density, dist_SN, energy_SN,age_SN)
 
     print*
     print*, "Running Super Capt'n..."
@@ -56,13 +58,14 @@
        call populate_array_super(0.d0, cpl, 0)
        call populate_array_super(coupleVal, cpl+1, 0)
      endif
-     
+
      print*
      print*, "Running coupling constant: ", cplConsts(cpl)
      do i = 1,1!1
-       dm_Mass = 1!10**(dble(i-1)/5.)
-       do j = 1,11
-        dm_Vel = 10**(dble(j-1)/10. + 3.) ! chris' notes test the range of velocities from 10^8 to 10^9 cm s^-1 for SI xSec
+       dm_Mass = 1.d0!10**(dble(i-1)/5.)
+       do j = 1,100
+        ! dm_Vel = 10**(dble(j-1)/10. + 1.) ! chris' notes test the range of velocities from 10^8 to 10^9 cm s^-1 for SI xSec
+        dm_Vel = 4d3*(dble(j)*0.01 + 1.)
         call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, dm_Scattered)
         write(55,*) dm_Mass, dm_Vel, dm_Scattered
         ! Use this to check for negative scattering numbers (couplings 5, 7, 8, 13, 14)
