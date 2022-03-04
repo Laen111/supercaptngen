@@ -52,7 +52,7 @@ module supermod
         lam_ST = 2./5.
         R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
         t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)  ! include missing units of c to get t_0 in sec
-        print*, 't_0',t_0
+        ! print*, 't_0',t_0
     end subroutine novaParameters
 
     ! This gives you the radius of the SNe shockwave front as a function of time
@@ -170,8 +170,8 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     R_s = Rshock(time) ! given in cm
     V_s = Vshock(time) ! given in cm s^{-1}
 
-    write(*,*) "DM velocity =", vel, "Time =", time, "R_shock =", R_s, "V_shock =", V_s
-    write(*,*) "DM kinetic energy =", 0.5*mdm*vel**2
+    !write(*,*) "DM velocity =", vel, "Time =", time, "R_shock =", R_s, "V_shock =", V_s
+    !write(*,*) "DM kinetic energy =", 0.5*mdm*vel**2
 
     if (time .lt. 0.d0) then
       scattered = 0.d0
@@ -287,7 +287,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
         result = 0.d0
 
-        write(*,*) "Element: ", isotopes_super(eli), " Maximum energy =", 2. * mdm * (A*mnuc*V_s/c0/(A*mnuc+mdm))**2
+        !write(*,*) "Element: ", isotopes_super(eli), " Maximum energy =", 2. * mdm * (A*mnuc*V_s/c0/(A*mnuc+mdm))**2
 
         ! condition on the maximal energy the DM can get from scattering off the SNe as given by Chris
         ! 1/2 * m_A * V_s^2 * 4 * m_A*m_x/(m_A+m_x)^2
