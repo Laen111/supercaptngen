@@ -40,7 +40,7 @@ module supermod
     double precision :: W_array_super(8,8,2,2,7)
     double precision :: yConverse_array_super(8)
 
-    double precision :: mdm, rhoX, Mej, ISM, Dist, Esn,Age
+    double precision :: mdm, rhoX, Mej, ISM, Dist, Esn, Age
 
     contains
 
@@ -166,7 +166,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     mdm = mx_in ! input in GeV
     j_chi = jx_in
     vel = vel_in * 1.d5/c1 ! convert km s^{-1} to cm s^{-1} to c
-    time = age - Dist/vel ! time for DM to reach earth (traveling Dist to earth at upscattered velocity vel), in seconds
+    time = age - Dist/vel ! the time (t=0 at SNe detonation) when the DM scattered, in seconds
     R_s = Rshock(time) ! given in cm
     V_s = Vshock(time) ! given in cm s^{-1}
 
@@ -326,7 +326,7 @@ end if !End condition on t > 0
     ! end if
 end subroutine supercaptn
 
-subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in,Age_in)
+subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in)
     ! input velocities in km/s, not cm/s!!!
     use supermod
     implicit none
