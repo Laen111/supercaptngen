@@ -11,7 +11,8 @@ module supermod
     implicit none
     double precision, parameter :: hbar=6.582d-25 !GeV*s
     double precision, parameter :: hbarc=1.97d-14 !GeV*cm
-    double precision, parameter :: c0=2.99792458d10 !cm*s^-1
+    double precision, parameter :: c0=1.d0 !
+    double precision, parameter :: c1=2.99792458d10 !cm*s^-1
     double precision, parameter :: mnuc=0.938 !GeV
     double precision, parameter :: pi=3.141592653
     double precision, parameter  :: year= 3.154d7 !seconds
@@ -50,7 +51,7 @@ module supermod
         lam_FE = 4./7.
         lam_ST = 2./5.
         R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
-        t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.) / c0 ! include missing units of c to get t_0 in sec
+        t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)  ! include missing units of c to get t_0 in sec
         print*, 't_0',t_0
     end subroutine novaParameters
 
@@ -164,13 +165,13 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
     mdm = mx_in ! input in GeV
     j_chi = jx_in
-    vel = vel_in * 1.d5 ! convert km s^{-1} to cm s^{-1}
+    vel = vel_in * 1.d5/c1 ! convert km s^{-1} to cm s^{-1} to c
     time = age - Dist/vel ! time for DM to reach earth (traveling Dist to earth at upscattered velocity vel), in seconds
     R_s = Rshock(time) ! given in cm
     V_s = Vshock(time) ! given in cm s^{-1}
 
     write(*,*) "DM velocity =", vel, "Time =", time, "R_shock =", R_s, "V_shock =", V_s
-    write(*,*) "DM kinetic energy =", 0.5*mdm*vel**2/c0**2
+    write(*,*) "DM kinetic energy =", 0.5*mdm*vel**2
 
     if (time .lt. 0.d0) then
       scattered = 0.d0
@@ -315,7 +316,8 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
         end if
     end do !eli
 
-    scattered = scattered * (rhoX*V_s*vel)/(4.*pi*Dist**2)
+    scattered = scattered * (rhoX*V_s*vel)/(4.*pi*Dist**2) !natural units
+    scattered = scattered/hbarc**3 !recover units
 
 end if !End condition on t > 0
     ! if (capped .gt. 1.d100) then
@@ -335,11 +337,12 @@ subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in,Age_in)
     real :: WM, WS2, WS1, WP2, WMP2, WP1, WD, WS1D
 
     ! load values into module
-    rhoX = rhoX_in ! loaded in GeV cm^{-3}
+    rhoX = rhoX_in*hbarc**3 ! loaded in GeV cm^{-3} -> GeV^4
     Mej = Mej_in * 1.98841d30 * 5.60958860d26! convert Solar Masses to kg to GeV c^{-2}
-    ISM = ISM_in ! loaded in cm^{-3}
+    ISM = ISM_in*hbarc**3 ! loaded in cm^{-3}
     Dist = Dist_in * 3.08567758149d18 ! convert pc to cm
-    Age = Age_in*year !seconds
+    Dist = Dist/hbarc !GeV^-1
+    Age = Age_in*year/hbar !GeV^-1
     ! this might need to be in GeV, check the Vshock and Rshock functions to see if units work out in ergs
     Esn = Esn_in * 624.151 ! convert ergs to GeV
 
