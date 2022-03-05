@@ -300,8 +300,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                             ! the energy in the integral is given by delta function: E = (mdm * w^2)/2.
                             ! the momentum transfer is defined using the energy of moving DM: E = q^2/(mdm*2)
                             ! gives: q = mdm * w
-                            ! means I can squeeze both the q and w powers onto w, and leave mdm just on q powers:
-                            result = result + prefactor_array(eli,q_pow,w_pow) * mdm**(q_pow-1) * (V_s/c0)**(w_pow+q_pow-2)
+                            result = result + prefactor_array(eli,q_pow,w_pow) * (mdm*vel)**(q_pow-1) * (V_s)**(w_pow-1)
                         end if
                     end do !q_pow
                 end do !w_pow
