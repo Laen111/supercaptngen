@@ -21,7 +21,7 @@
                         "c8-0", "c9-0", "c10-0", "c11-0", "c12-0", "c13-0", "c14-0", "c15-0"]
                         !   Strings of the (isoscalar) coupling names, just for writing convenience
 
-    num_isotopes = 8  ! number of isotopes super capt'n will loop over in the calculation: up to 8 isotopes
+    num_isotopes = 9  ! number of isotopes super capt'n will loop over in the calculation: up to 9 isotopes
     dm_Spin = 0.5     ! WIMP dark matter spin
     ! coupleVal = 1.65d-8
     ! coupleVal = sqrt(3.14*1.d-30)/(1.*1.973267d-44) ! get a coupling value in GeV^-2 for a specified xSection in cm^2
