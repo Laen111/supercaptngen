@@ -25,7 +25,8 @@
     dm_Spin = 0.5     ! WIMP dark matter spin
     ! coupleVal = 1.65d-8
     ! coupleVal = sqrt(3.14*1.d-30)/(1.*1.973267d-44) ! get a coupling value in GeV^-2 for a specified xSection in cm^2
-    coupleVal = sqrt(pi*1.d-30/(1./.4))/hbarc
+    ! coupleVal = sqrt(pi*1.d-30/(1./.4))/hbarc
+    coupleVal = sqrt(1.d-30/(1*.938)/0.0397)/hbarc
 
     print*
     print*, "Initializing Super Capt'n..."
@@ -63,9 +64,9 @@
      print*, "Running coupling constant: ", cplConsts(cpl)
      do i = 1,1!1
        dm_Mass = 1.d0!10**(dble(i-1)/5.)
-       do j = 1,100
+       do j = 1,1000
         ! dm_Vel = 10**(dble(j-1)/10. + 1.) ! chris' notes test the range of velocities from 10^8 to 10^9 cm s^-1 for SI xSec
-        dm_Vel = 4.32d3*(dble(j)*0.0005 + 1.)
+        dm_Vel = 4.32d3*(dble(j)*0.00005 + 1.)
         call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, dm_Scattered)
         write(55,*) dm_Mass, dm_Vel, dm_Scattered
         ! Use this to check for negative scattering numbers (couplings 5, 7, 8, 13, 14)

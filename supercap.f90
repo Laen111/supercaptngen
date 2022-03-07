@@ -50,9 +50,9 @@ module supermod
         ! from Chris' notes
         lam_FE = 4./7.
         lam_ST = 2./5.
-        R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
+        R_0 = ((3.*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
         t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)  ! include missing units of c to get t_0 in sec
-        print*, 't_0',t_0
+
     end subroutine novaParameters
 
     ! This gives you the radius of the SNe shockwave front as a function of time
@@ -261,6 +261,8 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                                         prefactor_array(eli,q_index+1,1) = prefactor_array(eli,q_index+1,1) - prefactor_current * &
                                             (c0**2/(4.*mu_T**2)) ! The Rfunctions are programmed with the 1/c0^2 in their v_perp^2 term (so I need to un-correct it for the- q^2/(2*mu_T)^2, and leave it be for the w^2/c^2)
 
+
+
                                         ! this is the +w^2 contribution
                                         ! it has the same q^2 contribution, but has a v_perp^2 contribution
                                         prefactor_array(eli,q_index,2) = prefactor_array(eli,q_index,2) + prefactor_current
@@ -280,6 +282,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
     ! now with all the prefactors computed, any 0.d0 entries in prefactor_array means that we can skip that integral evaluation!
     scattered = 0.d0
+    ! print*,'WARNING ONLY LOOKING AT H!!!!!'
     do eli=1,niso
 
         a = AtomicNumber_super(eli)
@@ -301,13 +304,19 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                         ! the momentum transfer is defined using the energy of moving DM: E = q^2/(mdm*2)
                         ! gives: q = mdm * w
                         ! means I can squeeze both the q and w powers onto w, and leave mdm just on q powers:
-                        result = result + prefactor_array(eli,q_pow,w_pow) * mdm**(q_pow-1) * (V_s/c0)**(w_pow+q_pow-2)
+                        result = result + prefactor_array(eli,q_pow,w_pow) * mdm**(q_pow-1) * (V_s/c0)**(w_pow-1)*vel**(q_pow-1)
                     end if
                 end do !q_pow
             end do !w_pow
 
             ! CHECK THIS FOR UNITS AGAIN, IT PROBABLY NEEDS TO BE CHANGED TO GET PHI(v) OUT OF IT
-            DsigmaDe = result * (2. * mnuc*a*c0**2)/(V_s**2 * (2*J+1))*hbarc**2
+            DsigmaDe = result * (2. * mnuc*a*c0**2)/(V_s**2 * (2.*J+1.))
+            if (eli .eq. 1) then
+            open(22,file='dsigmade.dat',ACCESS="APPEND")
+            write(22,*) V_s, DsigmaDe
+            close(22)
+            end if
+
 
             scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
             if ( eli.eq.1 ) then
