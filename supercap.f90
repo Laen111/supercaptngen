@@ -148,7 +148,7 @@ end subroutine populate_array_super
 ! jx_in: dark matter spin
 ! vel_in: dark matter final velocity in km s^{-1}
 !
-subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
+subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered, isotopeChosen)
     use supermod
     implicit none
     double precision, intent(in) :: mx_in, jx_in, vel_in
@@ -164,6 +164,9 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     double precision ::  RFuncConst, WFuncConst, prefactor_functype, prefactor_current
     double precision :: RD, RM, RMP2, RP1, RP2, RS1, RS1D, RS2 !R functions stored in their own source files
     double precision :: prefactor_array(niso,11,2)
+
+    ! for bug testing by isotope
+    integer :: isotopeChosen
 
     mdm = mx_in ! input in GeV
     j_chi = jx_in
@@ -188,7 +191,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
         ! First I set the entries in prefactor_array(niso,11,2)
         ! These are the constants that mulitply the corresonding integral evaluation
-        do eli=1,niso !isotopeChosen, isotopeChosen
+        do eli=isotopeChosen, isotopeChosen
             ! I'll need mu_T to include in the prefactor when there is a v^2 term
             a = AtomicNumber_super(eli)
             mu_T = (mnuc*a*mdm)/(mnuc*a+mdm)
