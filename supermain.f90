@@ -21,7 +21,7 @@
                         "c8-0", "c9-0", "c10-0", "c11-0", "c12-0", "c13-0", "c14-0", "c15-0"]
                         !   Strings of the (isoscalar) coupling names, just for writing convenience
 
-    num_isotopes = 8  ! number of isotopes super capt'n will loop over in the calculation: up to 8 isotopes
+    num_isotopes = 9  ! number of isotopes super capt'n will loop over in the calculation: up to 9 isotopes
     dm_Spin = 0.5     ! WIMP dark matter spin
     ! coupleVal = 1.65d-8
     ! coupleVal = sqrt(3.14*1.d-30)/(1.*1.973267d-44) ! get a coupling value in GeV^-2 for a specified xSection in cm^2
@@ -37,15 +37,16 @@
     dist_SN = 300. ! pc
     energy_SN = 8.d50 ! erg
     age_SN = 6.8d4 ! years
-    call supercaptn_init(dm_Density, ejecta_Mass, ISM_Density, dist_SN, energy_SN,age_SN)
+    call supercaptn_init(dm_Density, ejecta_Mass, ISM_Density, dist_SN, energy_SN, age_SN)
 
     print*
     print*, "Running Super Capt'n..."
 
-   do cpl=1, 1!4
+   do cpl=1, 14
      ! one unique filename for each coupling constant
      filename = "Oper_"//trim(cplConsts(cpl))//"_Phi.dat"
      open(55,file=filename)
+     write(55,*) "Coupling Constant value: ", coupleVal, "GeV^-2, or approximately", (coupleVal*hbarc)**2 * (1./.4)/pi, "cm^-2"
      write(55,*) "Dark Matter Mass ", " | ", " Dark Matter Velocity ", " | ", " Dark Matter Scattered"
 
      ! set the one coupling 'cpl' to a default value, skipping c2-0 (the 2nd index is not used)
@@ -62,11 +63,20 @@
 
      print*
      print*, "Running coupling constant: ", cplConsts(cpl)
-     do i = 1,1!1
+     do i = 1,1
        dm_Mass = 1.d0!10**(dble(i-1)/5.)
+<<<<<<< HEAD
        do j = 1,1000
         ! dm_Vel = 10**(dble(j-1)/10. + 1.) ! chris' notes test the range of velocities from 10^8 to 10^9 cm s^-1 for SI xSec
         dm_Vel = 4.32d3*(dble(j)*0.00005 + 1.)
+=======
+       ! write(55,*) "isotope number", i
+       do j = 1,1001
+        ! dm_Vel = 10**(dble(j-1)/10. + 1.) ! chris' notes test the range of velocities from 10^8 to 10^9 cm s^-1 for SI xSec
+        ! dm_Vel = 4.32d3*(dble(j)*0.0005 + 1.)
+        ! dm_Vel = 1.d3 * (dble(j-1)/100. + 4.)
+        dm_Vel = 1000. + dble(j-1) * (10000.-1000.)/1000.
+>>>>>>> 95c4690988d935e842db999867ac7173b47d23c5
         call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, dm_Scattered)
         write(55,*) dm_Mass, dm_Vel, dm_Scattered
         ! Use this to check for negative scattering numbers (couplings 5, 7, 8, 13, 14)

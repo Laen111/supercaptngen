@@ -16,20 +16,22 @@ module supermod
     double precision, parameter :: mnuc=0.938 !GeV
     double precision, parameter :: pi=3.141592653
     double precision, parameter  :: year= 3.154d7 !seconds
-    double precision, parameter :: AtomicNumber_super(8) = (/ 1., 4., 12., 20., 24., 28., 32., 56. /) !the isotopes the catena paper uses
-    character (len=4) :: isotopes_super(8) = [character(len=4) :: "H", "He4", "C12", "Ne20", "Mg24", "Si28", "S32", "Fe56"] !the isotopes in text form to match against the W functions
-    double precision, parameter :: AtomicSpin_super(8) = (/ 0.5, & ! {}^{1}\text{H}
+    double precision, parameter :: AtomicNumber_super(9) = (/ 1., 4., 12., 16., 20., 24., 28., 32., 56. /) !the isotopes the catena paper uses
+    character (len=4) :: isotopes_super(9) = [character(len=4) :: "H", "He4", "C12", "O16", "Ne20", "Mg24", "Si28", "S32", "Fe56"] !the isotopes in text form to match against the W functions
+    double precision, parameter :: AtomicSpin_super(9) = (/ 0.5, & ! {}^{1}\text{H}
                                                             0., & ! {}^{4}\text{He}
                                                             0., & ! {}^{12}\text{C}
+                                                            0., & ! {}^{16}\text{O}
                                                             0., & ! {}^{20}\text{Ne}
                                                             0., & ! {}^{24}\text{Mg}
                                                             0., & ! {}^{28}\text{Si}
                                                             0., & ! {}^{32}\text{S}
                                                             0. & ! {}^{56}\text{Fe}
                                                             /) !spins pulled from https://physics.nist.gov/PhysRefData/Handbook/element_name.htm
-    double precision, parameter :: MassFrac_super(8) = (/   0.493, & ! {}^{1}\text{H}
+    double precision, parameter :: MassFrac_super(9) = (/   0.493, & ! {}^{1}\text{H}
                                                             0.35, & ! {}^{4}\text{He}
                                                             0.015, & ! {}^{12}\text{C}
+                                                            0.1, & ! {}^{16}\text{O}         note that you'll need to get the mass fractions that Chris uses to include oxygen
                                                             0.005, & ! {}^{20}\text{Ne}
                                                             0.005, & ! {}^{24}\text{Mg}
                                                             0.02, & ! {}^{28}\text{Si}
@@ -37,10 +39,10 @@ module supermod
                                                             0.007 & ! {}^{56}\text{Fe}
                                                             /) ! the isotopic abundances from Chris' notes, sourced from SNe sims: https://arxiv.org/abs/astro-ph/0112478
     double precision :: coupling_Array(14,2)
-    double precision :: W_array_super(8,8,2,2,7)
-    double precision :: yConverse_array_super(8)
+    double precision :: W_array_super(8,9,2,2,7)
+    double precision :: yConverse_array_super(9)
 
-    double precision :: mdm, rhoX, Mej, ISM, Dist, Esn,Age
+    double precision :: mdm, rhoX, Mej, ISM, Dist, Esn, Age
 
     contains
 
@@ -163,46 +165,129 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     double precision :: RD, RM, RMP2, RP1, RP2, RS1, RS1D, RS2 !R functions stored in their own source files
     double precision :: prefactor_array(niso,11,2)
 
+    ! for bug testing by isotope
+    integer :: isotopeChosen
+
+    ! for sanity checks
+    double precision :: lam_FE, lam_ST
+    double precision :: R_0, t_0
+
     mdm = mx_in ! input in GeV
     j_chi = jx_in
     vel = vel_in * 1.d5/c1 ! convert km s^{-1} to cm s^{-1} to c
-    time = age - Dist/vel ! time for DM to reach earth (traveling Dist to earth at upscattered velocity vel), in seconds
+    ! time = age - Dist/vel ! the time (t=0 at SNe detonation) when the DM scattered, in seconds
+    time = 1000 * year / hbar ! temp hard code time for sanity check
     R_s = Rshock(time) ! given in cm
     V_s = Vshock(time) ! given in cm s^{-1}
+    call novaParameters(lam_FE, lam_ST, R_0, t_0)
+    ! print*, V_s, vel
+    ! print*, R_s, R_0, t_0
 
-    write(*,*) "DM velocity =", vel, "Time =", time, "R_shock =", R_s, "V_shock =", V_s
-    write(*,*) "DM kinetic energy =", 0.5*mdm*vel**2
+    !write(*,*) "DM velocity =", vel, "Time =", time, "R_shock =", R_s, "V_shock =", V_s
+    !write(*,*) "DM kinetic energy =", 0.5*mdm*vel**2
 
     if (time .lt. 0.d0) then
-      scattered = 0.d0
+        scattered = 0.d0
     else
-
-
-    do eli = 1, niso
-        do q_pow = 1, 11
-            do w_pow = 1, 2
-                prefactor_array(eli,q_pow,w_pow) = 0.d0
+        do eli = 1, niso
+            do q_pow = 1, 11
+                do w_pow = 1, 2
+                    prefactor_array(eli,q_pow,w_pow) = 0.d0
+                end do
             end do
         end do
-    end do
 
-    ! First I set the entries in prefactor_array(niso,11,2)
-    ! These are the constants that mulitply the corresonding integral evaluation
-    do eli=1,niso !isotopeChosen, isotopeChosen
-        ! I'll need mu_T to include in the prefactor when there is a v^2 term
-        a = AtomicNumber_super(eli)
-        mu_T = (mnuc*a*mdm)/(mnuc*a+mdm)
+        ! First I set the entries in prefactor_array(niso,11,2)
+        ! These are the constants that mulitply the corresonding integral evaluation
+        do eli=1, niso
+            ! I'll need mu_T to include in the prefactor when there is a v^2 term
+            a = AtomicNumber_super(eli)
+            mu_T = (mnuc*a*mdm)/(mnuc*a+mdm)
 
-        ! the current response function type in order: M, S2, S1, P2, MP2, P1, D, S1D
-        do funcType = 1,8
+            ! the current response function type in order: M, S2, S1, P2, MP2, P1, D, S1D
+            do funcType = 1,8
 
-            ! contribution to q^2 count from sum over function types
-            q_functype = 0
-            prefactor_functype = 1.
-            if ( functype.gt.3 ) then
-                q_functype = 1
-                prefactor_functype = 1./mnuc**2
-            end if
+                ! contribution to q^2 count from sum over function types
+                q_functype = 0
+                prefactor_functype = 1.
+                if ( functype.gt.3 ) then
+                    q_functype = 1
+                    prefactor_functype = 1./mnuc**2
+                end if
+
+                ! the first index on each response function
+                do tau=1,2
+
+                    ! the second index on each response function
+                    do taup=1,2
+
+                        ! the possible y-terms for each W function in order: y^0, y^1, y^2, y^3, y^4, y^5, y^6
+                        do term_W = 1,7
+
+                            WFuncConst = W_array_super(funcType,eli,tau,taup,term_W)
+
+                            ! skip if the result gets multiplied by zero in the WFunction
+                            if (WFuncConst.ne.0.) then
+
+                                ! the possible terms for each R function in order: c, v2, q2, v2q2, q4, v2q4
+                                do term_R = 1,6
+
+                                    ! pick out the appropriate term's constant from a given R function of tau, taup, and term_R
+                                    ! currently passes mnuc, and c0 - these are constants that could be shared to it through the shared module?
+                                    select case (funcType)
+                                    case (1)
+                                        RFuncConst = RM(mnuc,c0,tau,taup,term_R-1,j_chi,coupling_Array) !!!!!!!!!!!!!!! in the R functions the R term starts at zero, should change it to start at 1 like other Fortran things do for consistency
+                                    case (2)
+                                        RFuncConst = RS2(mnuc,c0,tau,taup,term_R-1,j_chi,coupling_Array)
+                                    case (3)
+                                        RFuncConst = RS1(mnuc,c0,tau,taup,term_R-1,j_chi,coupling_Array)
+                                    case (4)
+                                        RFuncConst = RP2(mnuc,tau,taup,term_R-1,j_chi,coupling_Array)
+                                    case (5)
+                                        RFuncConst = RMP2(mnuc,tau,taup,term_R-1,j_chi,coupling_Array)
+                                    case (6)
+                                        RFuncConst = RP1(mnuc,tau,taup,term_R-1,j_chi,coupling_Array)
+                                    case (7)
+                                        RFuncConst = RD(mnuc,tau,taup,term_R-1,j_chi,coupling_Array)
+                                    case (8)
+                                        RFuncConst = RS1D(tau,taup,term_R-1,j_chi,coupling_Array)
+                                    case default
+                                        stop "Um, I ran out of R functions to choose from?"
+                                    end select
+
+                                    ! skip if the result gets multiplied by zero in the RFunction
+                                    if (RFuncConst.ne.0.) then
+
+                                        ! calculates the total number of q^2
+                                        q_index = 1 + q_functype + term_W - 1 + floor((term_R-1.)/2.)
+                                        prefactor_current = prefactor_functype * RFuncConst * WFuncConst * &
+                                                            (c0* yConverse_array_super(eli))**(term_W-1)
+
+                                        ! check if term_R is even (in my index convention this corresponds to it having a v^2 in the term)
+                                        ! v^2 = w^2 - q^2/(2mu_T)^2
+                                        if ( mod(term_R,2).eq.0 ) then
+                                            ! this is the -q^2/(2mu_T)^2 contribution
+                                            ! it has one extra q^2 contribution compared to the current W & R function contributions
+                                            ! TRACK THIS LINE, SHOULD BE ONLY PLACE WHERE NEGATIVES APPEAR?
+                                            prefactor_array(eli,q_index+1,1) = prefactor_array(eli,q_index+1,1) &
+                                                - prefactor_current * (c0**2/(4.*mu_T**2)) ! The Rfunctions are programmed with the 1/c0^2 in their v_perp^2 term (so I need to un-correct it for the- q^2/(2*mu_T)^2, and leave it be for the w^2/c^2)
+
+                                            ! this is the +w^2 contribution
+                                            ! it has the same q^2 contribution, but has a v_perp^2 contribution
+                                            prefactor_array(eli,q_index,2) = prefactor_array(eli,q_index,2) + prefactor_current
+
+                                        else
+                                            prefactor_array(eli,q_index,1) = prefactor_array(eli,q_index,1) + prefactor_current
+
+                                        end if
+                                    end if
+                                end do !term_R
+                            end if
+                        end do !term_W
+                    end do !taup
+                end do !tau
+            end do !functype
+        end do !eli
 
             ! the first index on each response function
             do tau=1,2
@@ -270,9 +355,25 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                                     else
                                         prefactor_array(eli,q_index,1) = prefactor_array(eli,q_index,1) + prefactor_current
 
-                                    end if
-                                end if
-                            end do !term_R
+            a = AtomicNumber_super(eli)
+            J = AtomicSpin_super(eli)
+
+            result = 0.d0
+
+            !write(*,*) "Element: ", isotopes_super(eli), " Maximum energy =", 2. * mdm * (A*mnuc*V_s/c0/(A*mnuc+mdm))**2
+
+            ! condition on the maximal energy the DM can get from scattering off the SNe as given by Chris
+            ! 1/2 * m_A * V_s^2 * 4 * m_A*m_x/(m_A+m_x)^2
+            if ((0.5*mdm*vel**2 .lt. 2*A**2 * mnuc**2 * mdm/(A*mnuc+mdm)**2*V_s**2)) then
+
+                do w_pow=1,2
+
+                    do q_pow=1,11
+                        if ( prefactor_array(eli,q_pow,w_pow).ne.0. ) then
+                            ! the energy in the integral is given by delta function: E = (mdm * w^2)/2.
+                            ! the momentum transfer is defined using the energy of moving DM: E = q^2/(mdm*2)
+                            ! gives: q = mdm * w
+                            result = result + prefactor_array(eli,q_pow,w_pow) * (mdm*vel)**(q_pow-1) * (V_s)**(w_pow-1)
                         end if
                     end do !term_W
                 end do !taup
@@ -322,20 +423,21 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
             if ( eli.eq.1 ) then
                 scattered = scattered + 4./3.*pi*R_s**3*ISM*c0**2 * DsigmaDe
             end if
-        end if
-    end do !eli
+        end do !eli
 
-    scattered = scattered * (rhoX*V_s*vel)/(4.*pi*Dist**2) !natural units
-    scattered = scattered/hbarc**3 !recover units
+        scattered = scattered * (rhoX*V_s*vel)/(4.*pi*Dist**2) !natural units
+        scattered = scattered/hbarc**3 !recover units
+        scattered = scattered * 4*pi*Dist**2 ! temp sanity checking
 
-end if !End condition on t > 0
+    end if !End condition on t > 0
+
     ! if (capped .gt. 1.d100) then
     !   print*,"Capt'n General says: Oh my, it looks like you are capturing an", &
     !     "infinite amount of dark matter in the Sun. Best to look into that."
     ! end if
 end subroutine supercaptn
 
-subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in,Age_in)
+subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in)
     ! input velocities in km/s, not cm/s!!!
     use supermod
     implicit none
@@ -360,11 +462,11 @@ subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in,Age_in)
 
     ! this array stores each of the constants of the W polynomials from paper arxiv:1501.03729's appendix individually
     ! array index m handles the 8 varients of the W functions in order [M, S", S', P", MP", P', Delta, S'Delta]
-    ! index i handles the 8 isotopes [H, He4, C12, Ne20, Mg24, Si28, S32, Fe56]
+    ! index i handles the 8 isotopes [H, He4, C12, O16, Ne20, Mg24, Si28, S32, Fe56]
     ! index j & k handle the two superscripts for each W function, each taking values of 0 and 1
     ! index L determines the power of each constant ranging from y^0 to y^6
     do m=1,8
-        do i=1,8
+        do i=1,9
             do j=1,2
                 do k=1,2
                     do l=1,7
@@ -397,7 +499,7 @@ subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in,Age_in)
                                 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0/), (/14, 2/))
 
     ! yconv comes from arxiv:1501.03729 page 10, where yconv = (b/{2 hbar c})^2
-    do i = 1, 8
+    do i = 1, 9
         yConverse_array_super(i) = 264.114/(45.d0*AtomicNumber_super(i)**(-1./3.)-25.d0*AtomicNumber_super(i)**(-2./3.))
     end do
 end subroutine supercaptn_init
