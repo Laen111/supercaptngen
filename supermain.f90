@@ -45,7 +45,7 @@
      ! one unique filename for each coupling constant
      filename = "Oper_"//trim(cplConsts(cpl))//"_Phi.dat"
      open(55,file=filename)
-     write(55,*) "Coupling Constant value: ", coupleVal, "GeV^-2, or approximately", (coupleVal*hbarc)**2 * (1./.4)/pi, "cm^-2"
+     write(55,*) "Coupling Constant value: ", coupleVal, "GeV^-2, or approximately", (coupleVal*hbarc)**2 / (16.*pi), "cm^-2"
      write(55,*) "Dark Matter Mass ", " | ", " Dark Matter Velocity ", " | ", " Dark Matter Scattered"
 
      ! set the one coupling 'cpl' to a default value, skipping c2-0 (the 2nd index is not used)
