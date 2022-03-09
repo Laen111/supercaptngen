@@ -310,7 +310,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
             end do !w_pow
 
             ! CHECK THIS FOR UNITS AGAIN, IT PROBABLY NEEDS TO BE CHANGED TO GET PHI(v) OUT OF IT
-            DsigmaDe = result * (2. * mnuc*a*c0**2)/(V_s**2 * (2.*J+1.))
+            DsigmaDe = result * (2. * mdm*c0**2)/(V_s**2 * (2.*J+1.))
             if (eli .eq. 1) then
             open(22,file='dsigmade.dat',ACCESS="APPEND")
             write(22,*) V_s, DsigmaDe

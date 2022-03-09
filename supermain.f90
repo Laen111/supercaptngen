@@ -25,8 +25,8 @@
     dm_Spin = 0.5     ! WIMP dark matter spin
     ! coupleVal = 1.65d-8
     ! coupleVal = sqrt(3.14*1.d-30)/(1.*1.973267d-44) ! get a coupling value in GeV^-2 for a specified xSection in cm^2
-    ! coupleVal = sqrt(pi*1.d-30/(1./.4))/hbarc
-    coupleVal = sqrt(1.d-30/(1*.938)/0.0397)/hbarc
+    coupleVal = sqrt(16.*pi*1.d-30)/hbarc
+
 
     print*
     print*, "Initializing Super Capt'n..."
