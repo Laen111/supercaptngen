@@ -168,15 +168,15 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     ! for bug testing by isotope
     integer :: isotopeChosen
 
-    ! for sanity checks 
+    ! for sanity checks
     double precision :: lam_FE, lam_ST
     double precision :: R_0, t_0
 
     mdm = mx_in ! input in GeV
     j_chi = jx_in
     vel = vel_in * 1.d5/c1 ! convert km s^{-1} to cm s^{-1} to c
-    ! time = age - Dist/vel ! the time (t=0 at SNe detonation) when the DM scattered, in seconds
-    time = 1000 * year / hbar ! temp hard code time for sanity check
+    time = age - Dist/vel ! the time (t=0 at SNe detonation) when the DM scattered, in seconds
+    ! time = 1000 * year / hbar ! temp hard code time for sanity check
     R_s = Rshock(time) ! given in cm
     V_s = Vshock(time) ! given in cm s^{-1}
     call novaParameters(lam_FE, lam_ST, R_0, t_0)
@@ -317,7 +317,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                 end do !w_pow
 
                 ! CHECK THIS FOR UNITS AGAIN, IT PROBABLY NEEDS TO BE CHANGED TO GET PHI(v) OUT OF IT
-                DsigmaDe = result * (2. * mnuc*a*c0**2)/(V_s**2 * (2*J+1))
+                DsigmaDe = result * (2. * mdm*c0**2)/(V_s**2 * (2*J+1))
                 print*, "element:", isotopes_super(eli), "sigma:", DsigmaDe * 2*A**2 * mnuc**2 * mdm/(A*mnuc+mdm)**2*V_s**2*hbarc**2
 
                 scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
@@ -329,7 +329,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
         scattered = scattered * (rhoX*V_s*vel)/(4.*pi*Dist**2) !natural units
         scattered = scattered/hbarc**3 !recover units
-        scattered = scattered * 4*pi*Dist**2 ! temp sanity checking
+        ! scattered = scattered * 4*pi*Dist**2 ! temp sanity checking
 
     end if !End condition on t > 0
 
