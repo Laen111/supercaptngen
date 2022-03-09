@@ -43,7 +43,7 @@
 
    do cpl=1, 14
      ! one unique filename for each coupling constant
-     filename = "isotopeDataChris/Oper_"//trim(cplConsts(cpl))//"_IsotopicBreakdown.dat"
+     filename = "Oper_"//trim(cplConsts(cpl))//"_Phi.dat"
      open(55,file=filename)
      write(55,*) "Coupling Constant value: ", coupleVal, "GeV^-2, or approximately", (coupleVal*hbarc)**2 * (1./.4)/pi, "cm^-2"
      write(55,*) "Dark Matter Mass ", " | ", " Dark Matter Velocity ", " | ", " Dark Matter Scattered"
@@ -62,15 +62,15 @@
 
      print*
      print*, "Running coupling constant: ", cplConsts(cpl)
-     do i = 1,9
+     do i = 1,1
        dm_Mass = 1.d0!10**(dble(i-1)/5.)
-       write(55,*) "isotope number", i
+       ! write(55,*) "isotope number", i
        do j = 1,1001
         ! dm_Vel = 10**(dble(j-1)/10. + 1.) ! chris' notes test the range of velocities from 10^8 to 10^9 cm s^-1 for SI xSec
         ! dm_Vel = 4.32d3*(dble(j)*0.0005 + 1.)
         ! dm_Vel = 1.d3 * (dble(j-1)/100. + 4.)
-        dm_Vel = 4300. + dble(j-1) * (4600.-4300.)/1000.
-        call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, dm_Scattered, i)
+        dm_Vel = 1000. + dble(j-1) * (10000.-1000.)/1000.
+        call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, dm_Scattered)
         write(55,*) dm_Mass, dm_Vel, dm_Scattered
         ! Use this to check for negative scattering numbers (couplings 5, 7, 8, 13, 14)
         ! if ( dm_Scattered < 0. ) then
