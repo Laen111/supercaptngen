@@ -176,7 +176,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     j_chi = jx_in
     vel = vel_in * 1.d5/c1 ! convert km s^{-1} to cm s^{-1} to c
     time = age - Dist/vel ! the time (t=0 at SNe detonation) when the DM scattered, in seconds
-    ! time = 1000 * year / hbar ! temp hard code time for sanity check
+    !time = 1000. * year / hbar ! temp hard code time for sanity check
     R_s = Rshock(time) ! given in cm
     V_s = Vshock(time) ! given in cm s^{-1}
     call novaParameters(lam_FE, lam_ST, R_0, t_0)
@@ -329,7 +329,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
         scattered = scattered * (rhoX*V_s*vel)/(4.*pi*Dist**2) !natural units
         scattered = scattered/hbarc**3 !recover units
-        ! scattered = scattered * 4*pi*Dist**2 ! temp sanity checking
+        ! scattered = scattered * 4*pi*Dist**2 * hbarc**2 ! temp sanity checking
 
     end if !End condition on t > 0
 
