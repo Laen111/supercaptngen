@@ -311,7 +311,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                             ! the energy in the integral is given by delta function: E = (mdm * w^2)/2.
                             ! the momentum transfer is defined using the energy of moving DM: E = q^2/(mdm*2)
                             ! gives: q = mdm * w
-                            if ( eli .eq. 1 ) then ! we're doing Hydrogen which doesn't get an exponential in it's W function fits
+                            if ( eli .eq. 1 ) then ! we're doing Hydrogen which doesn't get an exponential in its W function fits
                                 result = result + prefactor_array(eli,q_pow,w_pow) * (mdm*vel)**(q_pow-1) * (V_s)**(w_pow-1)
                             else
                                 result = result + prefactor_array(eli,q_pow,w_pow) * (mdm*vel)**(q_pow-1) * (V_s)**(w_pow-1) &
