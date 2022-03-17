@@ -9,13 +9,13 @@
 
 module supermod
     implicit none
-    double precision, parameter :: hbar=6.582119569d-25 !GeV*s
-    double precision, parameter :: hbarc=1.973269804d-14 !GeV*cm
-    double precision, parameter :: c0=1.d0 !
-    double precision, parameter :: c1=2.99792458d10 !cm*s^-1
-    double precision, parameter :: mnuc=0.938 !GeV
-    double precision, parameter :: pi=3.141592653
-    double precision, parameter  :: year= 3.154d7 !seconds
+    double precision, parameter :: hbar=6.582119569d-25 !GeV*s, taken from PDG 2020
+    double precision, parameter :: hbarc=1.973269804d-14 !GeV*cm, taken from PDG 2020
+    double precision, parameter :: c0=1.d0
+    double precision, parameter :: c1=2.99792458d10 !cm*s^-1, taken from PDG 2020
+    double precision, parameter :: mnuc=0.938272088 !GeV, taken from PDG 2020
+    double precision, parameter :: pi=3.141592653 ! taken from PDG 2020
+    double precision, parameter  :: year=3.15569251d7 !seconds, taken as Tropical Year PDG 2020
     double precision, parameter :: AtomicNumber_super(9) = (/ 1., 4., 12., 16., 20., 24., 28., 32., 56. /) !the isotopes the catena paper uses
     character (len=4) :: isotopes_super(9) = [character(len=4) :: "H", "He4", "C12", "O16", "Ne20", "Mg24", "Si28", "S32", "Fe56"] !the isotopes in text form to match against the W functions
     double precision, parameter :: AtomicSpin_super(9) = (/ 0.5, & ! {}^{1}\text{H}
