@@ -9,8 +9,8 @@
 
 module supermod
     implicit none
-    double precision, parameter :: hbar=6.582d-25 !GeV*s
-    double precision, parameter :: hbarc=1.97d-14 !GeV*cm
+    double precision, parameter :: hbar=6.582119569d-25 !GeV*s
+    double precision, parameter :: hbarc=1.973269804d-14 !GeV*cm
     double precision, parameter :: c0=1.d0 !
     double precision, parameter :: c1=2.99792458d10 !cm*s^-1
     double precision, parameter :: mnuc=0.938 !GeV
