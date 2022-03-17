@@ -14,6 +14,7 @@ module supermod
     double precision, parameter :: c0=1.d0
     double precision, parameter :: c1=2.99792458d10 !cm*s^-1, taken from PDG 2020
     double precision, parameter :: mnuc=0.938272088 !GeV, taken from PDG 2020
+    ! double precision, parameter :: AMU=0.931494102 !GeV, taken from PDG 2020, could use instead of the proton mass?
     double precision, parameter :: pi=3.141592653 ! taken from PDG 2020
     double precision, parameter  :: year=3.15569251d7 !seconds, taken as Tropical Year PDG 2020
     double precision, parameter :: AtomicNumber_super(9) = (/ 1., 4., 12., 16., 20., 24., 28., 32., 56. /) !the isotopes the catena paper uses
