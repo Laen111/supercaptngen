@@ -169,6 +169,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     mdm = mx_in ! input in GeV
     j_chi = jx_in
     vel = vel_in * 1.d5/c1 ! convert km s^{-1} to cm s^{-1} to c
+    if ( vel .gt. 1. ) stop "The dark matter velocity cannot exceed the speed of light"
     time = age - Dist/vel ! the time (t=0 at SNe detonation) when the DM scattered, in GeV^{-1}
     !time = 1000. * year / hbar ! temp hard code time for sanity check
     R_s = Rshock(time) ! given in GeV^{-1}
