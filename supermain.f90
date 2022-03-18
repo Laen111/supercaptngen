@@ -9,7 +9,7 @@
     implicit none
     character*300 :: filename ! writing filename
     integer :: cpl, i, j      ! loop indicies
-    double precision, parameter :: pi=3.141592653, hbarc = 1.97d-14
+    double precision, parameter :: pi=3.141592653, hbarc = 1.973269804d-14
     double precision :: dm_Density, ejecta_Mass, ISM_Density, dist_SN, energy_SN,age_SN     ! initialization parameters
 
     double precision :: dm_Mass, dm_Spin, dm_Vel ! WIMP dark matter particle parameters
@@ -65,17 +65,13 @@
      do i = 1,1
        dm_Mass = 1.d0!10**(dble(i-1)/5.)
        ! write(55,*) "isotope number", i
-       do j = 1,1001
+       do j = 1,2001
         ! dm_Vel = 10**(dble(j-1)/10. + 1.) ! chris' notes test the range of velocities from 10^8 to 10^9 cm s^-1 for SI xSec
         dm_Vel = 4.32d3*(dble(j)*0.00005 + 1.)
         ! dm_Vel = 1.d3 * (dble(j-1)/100. + 4.)
-        ! dm_Vel = 1000. + dble(j-1) * (10000.-1000.)/1000.
+        ! dm_Vel = 4300. + dble(j-1) * (4500.-4300.)/2000.
         call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, dm_Scattered)
         write(55,*) dm_Mass, dm_Vel, dm_Scattered
-        ! Use this to check for negative scattering numbers (couplings 5, 7, 8, 13, 14)
-        ! if ( dm_Scattered < 0. ) then
-        !   print*, "Dark Matter Mass: ", dm_Mass, "Dark Matter Velocity: ", dm_Vel, "Scattered: ", dm_Scattered
-        ! end if
         print*, "Dark Matter Mass: ", dm_Mass, "Dark Matter Velocity: ", dm_Vel, "Scattered: ", dm_Scattered
        end do
      end do
