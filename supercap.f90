@@ -61,7 +61,6 @@ module supermod
         lam_ST = 2./5.
         R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
         t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)  ! include missing units of c to get t_0 in sec
-        ! print*, 't_0',t_0
     end subroutine novaParameters
 
     ! This gives you the radius of the SNe shockwave front as a function of time
@@ -174,12 +173,15 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     !time = 1000. * year / hbar ! temp hard code time for sanity check
     R_s = Rshock(time) ! given in GeV^{-1}
     V_s = Vshock(time) ! given in c
-    call novaParameters(lam_FE, lam_ST, R_0, t_0)
-    ! print*, V_s, vel
-    ! print*, R_s, R_0, t_0
+    ! print*, "Vshock[cm/s]:",V_s*c1, "vel[cm/s]:",vel*c1
+    ! call novaParameters(lam_FE, lam_ST, R_0, t_0)
+    ! print*, "Rshock[cm]:",R_s*hbarc, "R0[cm]:",R_0*hbarc, "t0[s]:",t_0*hbar
 
-    !write(*,*) "DM velocity =", vel, "Time =", time, "R_shock =", R_s, "V_shock =", V_s
-    !write(*,*) "DM kinetic energy =", 0.5*mdm*vel**2
+    ! print*, "DM velocity[cm/s]", vel*c1, "Time[s]:", time*hbar, "R_shock[cm]", R_s*hbarc, "V_shock[cm/s]:", V_s*c1
+    ! print*, "DM kinetic energy[GeV]:", 0.5*mdm*vel**2
+
+    ! print*, "Esn[GeV]:",Esn, "Mej[GeV]:",Mej, "ISM[cm^-3]:",ISM*(hbarc)**3
+    ! print*, "mass dm[GeV]:", mdm
 
     if (time .lt. 0.d0) then
         scattered = 0.d0
@@ -292,10 +294,11 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
             result = 0.d0
 
-            !write(*,*) "Element: ", isotopes_super(eli), " Maximum energy =", 2. * mdm * (A*mnuc*V_s/c0/(A*mnuc+mdm))**2
-
             ! condition on the maximal energy the DM can get from scattering off the SNe as given by Chris
             ! 1/2 * m_A * V_s^2 * 4 * m_A*m_x/(m_A+m_x)^2
+            ! print*, "eli:", isotopes_super(eli), "mass nuc[GeV]:", A*mnuc
+            ! print*, "yconv:", yConverse_array_super(eli), "y[unitless]:", yConverse_array_super(eli)*(mdm*vel)**2
+            ! print*, "conditional vel[cm/s] <", (2*A*mnuc*V_s)/(A*mnuc + mdm)*c1
             if (vel .lt. (2*A*mnuc*V_s)/(A*mnuc + mdm)) then
 
                 do w_pow=1,2
@@ -316,7 +319,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                 end do !w_pow
 
                 DsigmaDe = result * (2. * mdm*c0**2)/(V_s**2 * (2*J+1))
-                print*, "element:", isotopes_super(eli), "sigma:", DsigmaDe * 2*A**2 * mnuc**2 * mdm/(A*mnuc+mdm)**2*V_s**2*hbarc**2
+                ! print*, DsigmaDe*(hbarc)**2, vel*c1
 
                 scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
                 if ( eli.eq.1 ) then
