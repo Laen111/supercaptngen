@@ -26,7 +26,7 @@
     ! coupleVal = 1.65d-8
     ! coupleVal = sqrt(3.14*1.d-30)/(1.*1.973267d-44) ! get a coupling value in GeV^-2 for a specified xSection in cm^2
     coupleVal = sqrt(16.*pi*1.d-30)/hbarc
-    coupleVal = coupleVal / sqrt(0.93732042869226050) ! correct to get xsec exactly 10^-30 cm^2
+    ! coupleVal = coupleVal / sqrt(0.93732042869226050) ! correct to get xsec exactly 10^-30 cm^2
 
     print*
     print*, "Initializing Super Capt'n..."
