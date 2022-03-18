@@ -6,15 +6,11 @@ If you use this code, you can cite **_NOT USED YET_** where it was first deploye
 
 Run `make` to compile the library on its own.
 
-If you want the test file as well, run `make supertest.x` which compiles the test script in *supermain.f90*.
+If you want the test file as well, run `make supertest.x` which compiles the test script in _supermain.f90_.
 The test main file shows how to work with Super Capt'n.
 
-Something is screwy with line 233 in `supercap.f90`, where I try to add the negative contribution from $(v^\perp_T)^2$.
+## TODO
 
-### TODO:
-
-- Figure out why the $c_{5}^{0}$, $c_{7}^{0}$, $c_{8}^{0}$, $c_{13}^{0}$, and $c_{14}^{0}$ couplings have negative values (something to do with $(v^\perp_T)^2 = w^2 - \left(\frac{q}{2\mu_T}\right)^2$)
-	- The chenges to units seems to have fixed $c_{5}^{0}$, and $c_{8}^{0}$, leaving $c_{7}^{0}$, $c_{13}^{0}$, and $c_{14}^{0}$ still negative...
+- There is still an overall normalization difference between super and Chris' data?
 - Refine user interface to Super Capt'n
-- Double check the units (especially on the $V_\text{shock}$ and $R_\text{shock}$ functions)
 - is there a fixed value we take if the DM kinetic energy exceeds the isotope's max energy transfer?
