@@ -26,6 +26,7 @@
     ! coupleVal = 1.65d-8
     ! coupleVal = sqrt(3.14*1.d-30)/(1.*1.973267d-44) ! get a coupling value in GeV^-2 for a specified xSection in cm^2
     coupleVal = sqrt(16.*pi*1.d-30)/hbarc
+    coupleVal = coupleVal / sqrt(0.93732042869226050) ! correct to get xsec exactly 10^-30 cm^2
 
     print*
     print*, "Initializing Super Capt'n..."
@@ -70,6 +71,7 @@
         dm_Vel = 4.32d3*(dble(j)*0.00005 + 1.)
         ! dm_Vel = 1.d3 * (dble(j-1)/100. + 4.)
         ! dm_Vel = 4300. + dble(j-1) * (4500.-4300.)/2000.
+        ! dm_Vel = 1. + dble(j-1) * (10000.-1.)/2000.
         call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, dm_Scattered)
         write(55,*) dm_Mass, dm_Vel, dm_Scattered
         print*, "Dark Matter Mass: ", dm_Mass, "Dark Matter Velocity: ", dm_Vel, "Scattered: ", dm_Scattered
