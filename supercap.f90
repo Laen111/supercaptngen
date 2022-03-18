@@ -1,10 +1,11 @@
 !   Super Capt'n
 !   Module to house everying specific to Super Capt'n
-!   Neal Avis Kozar 2021
-!   all units of distance: cm
+!   Neal Avis Kozar 2021-22
+!   all units of distance: GeV^-1
 !   all units of mass/energy : GeV (or GeV/c^2, don't forget)
-!   all units of time: seconds
+!   all units of time: GeV^-1
 !   Sticking with notation of 1504.04378. Cite that paper. Or 1605.06502 it's even better.
+!   We've swapped to all natural units internally
 
 
 module supermod
@@ -17,6 +18,10 @@ module supermod
     ! double precision, parameter :: AMU=0.931494102 !GeV, taken from PDG 2020, could use instead of the proton mass?
     double precision, parameter :: pi=3.141592653 ! taken from PDG 2020
     double precision, parameter  :: year=3.15569251d7 !seconds, taken as Tropical Year PDG 2020
+    double precision, parameter :: kg_SolarM=1.98841d30 !kg*SolarMass^-1
+    double precision, parameter :: GeV_kg=5.60958860d26 !GeV*kg^-1
+    double precision, parameter :: cm_parsec=3.08567758149d18 !cm*pc^-1
+    double precision, parameter :: GeV_ergs=624.151 !GeV*ergs^-1
     double precision, parameter :: AtomicNumber_super(9) = (/ 1., 4., 12., 16., 20., 24., 28., 32., 56. /) !the isotopes the catena paper uses
     character (len=4) :: isotopes_super(9) = [character(len=4) :: "H", "He4", "C12", "O16", "Ne20", "Mg24", "Si28", "S32", "Fe56"] !the isotopes in text form to match against the W functions
     double precision, parameter :: AtomicSpin_super(9) = (/ 0.5, & ! {}^{1}\text{H}
@@ -32,7 +37,7 @@ module supermod
     double precision, parameter :: MassFrac_super(9) = (/   0.493, & ! {}^{1}\text{H}
                                                             0.35, & ! {}^{4}\text{He}
                                                             0.015, & ! {}^{12}\text{C}
-                                                            0.1, & ! {}^{16}\text{O}         note that you'll need to get the mass fractions that Chris uses to include oxygen
+                                                            0.1, & ! {}^{16}\text{O}
                                                             0.005, & ! {}^{20}\text{Ne}
                                                             0.005, & ! {}^{24}\text{Mg}
                                                             0.02, & ! {}^{28}\text{Si}
@@ -47,6 +52,7 @@ module supermod
 
     contains
 
+    ! This gets you the parameters used in Rshock and Vshock
     subroutine novaParameters(lam_FE, lam_ST, R_0, t_0)
     implicit none
     double precision :: lam_FE, Lam_ST, R_0, t_0
@@ -59,7 +65,7 @@ module supermod
     end subroutine novaParameters
 
     ! This gives you the radius of the SNe shockwave front as a function of time
-    ! NEEDS TO BE OUTPUT AS cm!
+    ! Returns in units of GeV^{-1}
     function Rshock(t)
         implicit none
         double precision :: Rshock
@@ -67,12 +73,6 @@ module supermod
 
         double precision :: lam_FE, lam_ST
         double precision :: R_0, t_0
-
-        ! ! from Chris' notes
-        ! lam_FE = 4./7.
-        ! lam_ST = 2./5.
-        ! R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
-        ! t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.) / c0 ! include missing units of c to get t_0 in sec
 
         ! retrieve lam_FE, lam_ST, R_0, and t_0 parameters
         call novaParameters(lam_FE, lam_ST, R_0, t_0)
@@ -83,7 +83,7 @@ module supermod
     end function Rshock
 
     ! This gives you the velocity of the SNe shockwave front as a function of time
-    ! NEEDS TO BE OUTPUT AS cm s^{-1}!
+    ! Returns in units of c
     function Vshock(t)
         implicit none
         double precision :: Vshock
@@ -91,12 +91,6 @@ module supermod
 
         double precision :: lam_FE, lam_ST
         double precision :: R_0, t_0
-
-        ! ! from Chris' notes
-        ! lam_FE = 4./7.
-        ! lam_ST = 2./5.
-        ! R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
-        ! t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.) / c0 ! include missing units of c to get t_0 in sec
 
         ! retrieve lam_FE, lam_ST, R_0, and t_0 parameters
         call novaParameters(lam_FE, lam_ST, R_0, t_0)
@@ -176,10 +170,10 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     mdm = mx_in ! input in GeV
     j_chi = jx_in
     vel = vel_in * 1.d5/c1 ! convert km s^{-1} to cm s^{-1} to c
-    time = age - Dist/vel ! the time (t=0 at SNe detonation) when the DM scattered, in seconds
+    time = age - Dist/vel ! the time (t=0 at SNe detonation) when the DM scattered, in GeV^{-1}
     !time = 1000. * year / hbar ! temp hard code time for sanity check
-    R_s = Rshock(time) ! given in cm
-    V_s = Vshock(time) ! given in cm s^{-1}
+    R_s = Rshock(time) ! given in GeV^{-1}
+    V_s = Vshock(time) ! given in c
     call novaParameters(lam_FE, lam_ST, R_0, t_0)
     ! print*, V_s, vel
     ! print*, R_s, R_0, t_0
@@ -199,7 +193,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
         end do
 
         ! First I set the entries in prefactor_array(niso,11,2)
-        ! These are the constants that mulitply the corresonding integral evaluation
+        ! These are the constants that mulitply the corresonding q^{2n} w^{2m} terms, n:[0->10], and m:[0->1]
         do eli=1, niso
             ! I'll need mu_T to include in the prefactor when there is a v^2 term
             a = AtomicNumber_super(eli)
@@ -269,7 +263,6 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                                         if ( mod(term_R,2).eq.0 ) then
                                             ! this is the -q^2/(2mu_T)^2 contribution
                                             ! it has one extra q^2 contribution compared to the current W & R function contributions
-                                            ! TRACK THIS LINE, SHOULD BE ONLY PLACE WHERE NEGATIVES APPEAR?
                                             prefactor_array(eli,q_index+1,1) = prefactor_array(eli,q_index+1,1) &
                                                 - prefactor_current * (c0**2/(4.*mu_T**2)) ! The Rfunctions are programmed with the 1/c0^2 in their v_perp^2 term (so I need to un-correct it for the- q^2/(2*mu_T)^2, and leave it be for the w^2/c^2)
 
@@ -290,7 +283,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
             end do !functype
         end do !eli
 
-        ! now with all the prefactors computed, any 0.d0 entries in prefactor_array means that we can skip that integral evaluation!
+        ! now with all the prefactors computed, any 0.d0 entries in prefactor_array means that we can skip that q^{2n} w^{2m} term
         scattered = 0.d0
         do eli=1,niso
 
@@ -303,7 +296,6 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
             ! condition on the maximal energy the DM can get from scattering off the SNe as given by Chris
             ! 1/2 * m_A * V_s^2 * 4 * m_A*m_x/(m_A+m_x)^2
-            ! if ((0.5*mdm*vel**2 .lt. 2*A**2 * mnuc**2 * mdm/(A*mnuc+mdm)**2*V_s**2)) then
             if (vel .lt. (2*A*mnuc*V_s)/(A*mnuc + mdm)) then
 
                 do w_pow=1,2
@@ -323,7 +315,6 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                     end do !q_pow
                 end do !w_pow
 
-                ! CHECK THIS FOR UNITS AGAIN, IT PROBABLY NEEDS TO BE CHANGED TO GET PHI(v) OUT OF IT
                 DsigmaDe = result * (2. * mdm*c0**2)/(V_s**2 * (2*J+1))
                 print*, "element:", isotopes_super(eli), "sigma:", DsigmaDe * 2*A**2 * mnuc**2 * mdm/(A*mnuc+mdm)**2*V_s**2*hbarc**2
 
@@ -340,10 +331,6 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
     end if !End condition on t > 0
 
-    ! if (capped .gt. 1.d100) then
-    !   print*,"Capt'n General says: Oh my, it looks like you are capturing an", &
-    !     "infinite amount of dark matter in the Sun. Best to look into that."
-    ! end if
 end subroutine supercaptn
 
 subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in)
@@ -358,13 +345,12 @@ subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in)
 
     ! load values into module
     rhoX = rhoX_in*hbarc**3 ! loaded in GeV cm^{-3} -> GeV^4
-    Mej = Mej_in * 1.98841d30 * 5.60958860d26! convert Solar Masses to kg to GeV c^{-2}
+    Mej = Mej_in * kg_SolarM * GeV_kg ! convert Solar Masses to kg to GeV c^{-2}
     ISM = ISM_in*hbarc**3 ! loaded in cm^{-3}
-    Dist = Dist_in * 3.08567758149d18 ! convert pc to cm
-    Dist = Dist/hbarc !GeV^-1
+    Dist = Dist_in * cm_parsec / hbarc ! convert pc to cm to GeV^-1
     Age = Age_in*year/hbar !GeV^-1
     ! this might need to be in GeV, check the Vshock and Rshock functions to see if units work out in ergs
-    Esn = Esn_in * 624.151 ! convert ergs to GeV
+    Esn = Esn_in * GeV_ergs ! convert ergs to GeV
 
     ! mass fraction is given by MassFrac_super, from SNe sims
     ! it doesn't vary with a radial coordinate, so it is only a fixed frac per isotope
