@@ -171,18 +171,16 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     vel = vel_in * 1.d5/c1 ! convert km s^{-1} to cm s^{-1} to c
     if ( vel .gt. 1. ) stop "The dark matter velocity cannot exceed the speed of light"
     time = age - Dist/vel ! the time (t=0 at SNe detonation) when the DM scattered, in GeV^{-1}
-    !time = 1000. * year / hbar ! temp hard code time for sanity check
+    ! time = 1000. * year / hbar ! temp hard code time for sanity check
     R_s = Rshock(time) ! given in GeV^{-1}
     V_s = Vshock(time) ! given in c
-    ! print*, "Vshock[cm/s]:",V_s*c1, "vel[cm/s]:",vel*c1
+    ! print*, "mass dm[GeV]:", mdm, "DM vel[cm/s]:",vel*c1, "Time[s]:", time*hbar
+    ! print*, "Rshock[cm]:",R_s*hbarc, "Vshock[cm/s]:",V_s*c1
     ! call novaParameters(lam_FE, lam_ST, R_0, t_0)
-    ! print*, "Rshock[cm]:",R_s*hbarc, "R0[cm]:",R_0*hbarc, "t0[s]:",t_0*hbar
-
-    ! print*, "DM velocity[cm/s]", vel*c1, "Time[s]:", time*hbar, "R_shock[cm]", R_s*hbarc, "V_shock[cm/s]:", V_s*c1
+    ! print*, "R0[cm]:",R_0*hbarc, "t0[s]:",t_0*hbar
     ! print*, "DM kinetic energy[GeV]:", 0.5*mdm*vel**2
-
     ! print*, "Esn[GeV]:",Esn, "Mej[GeV]:",Mej, "ISM[cm^-3]:",ISM*(hbarc)**3
-    ! print*, "mass dm[GeV]:", mdm
+    ! print*
 
     if (time .lt. 0.d0) then
         scattered = 0.d0
@@ -321,6 +319,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
                 DsigmaDe = result * (2. * mdm*c0**2)/(V_s**2 * (2*J+1))
                 ! print*, DsigmaDe*(hbarc)**2, vel*c1
+                ! print*, "sigma[cm^2]:",DsigmaDe * 2*mdm*((A*mnuc*V_s)/(A*mnuc + mdm))**2 * hbarc**2
 
                 scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
                 if ( eli.eq.1 ) then
