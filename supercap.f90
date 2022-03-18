@@ -17,7 +17,7 @@ module supermod
     double precision, parameter :: mnuc=0.938272088 !GeV, taken from PDG 2020
     ! double precision, parameter :: AMU=0.931494102 !GeV, taken from PDG 2020, could use instead of the proton mass?
     double precision, parameter :: pi=3.141592653 ! taken from PDG 2020
-    double precision, parameter  :: year=3.15569251d7 !seconds, taken as Tropical Year PDG 2020
+    double precision, parameter :: year=3.15569251d7 !seconds, taken as Tropical Year PDG 2020
     double precision, parameter :: kg_SolarM=1.98841d30 !kg*SolarMass^-1
     double precision, parameter :: GeV_kg=5.60958860d26 !GeV*kg^-1
     double precision, parameter :: cm_parsec=3.08567758149d18 !cm*pc^-1
