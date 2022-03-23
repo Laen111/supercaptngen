@@ -159,28 +159,14 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     double precision :: RD, RM, RMP2, RP1, RP2, RS1, RS1D, RS2 !R functions stored in their own source files
     double precision :: prefactor_array(niso,11,2)
 
-    ! for bug testing by isotope
-    integer :: isotopeChosen
-
-    ! for sanity checks
-    double precision :: lam_FE, lam_ST
-    double precision :: R_0, t_0
-
     mdm = mx_in ! input in GeV
     j_chi = jx_in
     vel = vel_in * 1.d5/c1 ! convert km s^{-1} to cm s^{-1} to c
     if ( vel .gt. 1. ) stop "The dark matter velocity cannot exceed the speed of light"
     time = age - Dist/vel ! the time (t=0 at SNe detonation) when the DM scattered, in GeV^{-1}
-    ! time = 1000. * year / hbar ! temp hard code time for sanity check
+
     R_s = Rshock(time) ! given in GeV^{-1}
     V_s = Vshock(time) ! given in c
-    ! print*, "mass dm[GeV]:", mdm, "DM vel[cm/s]:",vel*c1, "Time[s]:", time*hbar
-    ! print*, "Rshock[cm]:",R_s*hbarc, "Vshock[cm/s]:",V_s*c1
-    ! call novaParameters(lam_FE, lam_ST, R_0, t_0)
-    ! print*, "R0[cm]:",R_0*hbarc, "t0[s]:",t_0*hbar
-    ! print*, "DM kinetic energy[GeV]:", 0.5*mdm*vel**2
-    ! print*, "Esn[GeV]:",Esn, "Mej[GeV]:",Mej, "ISM[cm^-3]:",ISM*(hbarc)**3
-    ! print*
 
     if (time .lt. 0.d0) then
         scattered = 0.d0
@@ -295,9 +281,6 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
             ! condition on the maximal energy the DM can get from scattering off the SNe as given by Chris
             ! 1/2 * m_A * V_s^2 * 4 * m_A*m_x/(m_A+m_x)^2
-            ! print*, "eli:", isotopes_super(eli), "mass nuc[GeV]:", A*mnuc
-            ! print*, "yconv:", yConverse_array_super(eli), "y[unitless]:", yConverse_array_super(eli)*(mdm*vel)**2
-            ! print*, "conditional vel[cm/s] <", (2*A*mnuc*V_s)/(A*mnuc + mdm)*c1
             if (vel .lt. (2*A*mnuc*V_s)/(A*mnuc + mdm)) then
 
                 do w_pow=1,2
@@ -318,8 +301,6 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                 end do !w_pow
 
                 DsigmaDe = result * (2. * mdm*c0**2)/(V_s**2 * (2*J+1))
-                ! print*, DsigmaDe*(hbarc)**2, vel*c1
-                ! print*, "sigma[cm^2]:",DsigmaDe * 2*mdm*((A*mnuc*V_s)/(A*mnuc + mdm))**2 * hbarc**2
 
                 scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
                 if ( eli.eq.1 ) then
@@ -330,7 +311,6 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
         scattered = scattered * (rhoX*V_s*vel)/(4.*pi*Dist**2) !natural units
         scattered = scattered/hbarc**3 !recover units
-        ! scattered = scattered * 4*pi*Dist**2 * hbarc**2 ! temp sanity checking
 
     end if !End condition on t > 0
 
@@ -352,7 +332,6 @@ subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in)
     ISM = ISM_in*hbarc**3 ! loaded in cm^{-3}
     Dist = Dist_in * cm_parsec / hbarc ! convert pc to cm to GeV^-1
     Age = Age_in*year/hbar !GeV^-1
-    ! this might need to be in GeV, check the Vshock and Rshock functions to see if units work out in ergs
     Esn = Esn_in * GeV_ergs ! convert ergs to GeV
 
     ! mass fraction is given by MassFrac_super, from SNe sims
@@ -360,7 +339,7 @@ subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in)
 
     ! this array stores each of the constants of the W polynomials from paper arxiv:1501.03729's appendix individually
     ! array index m handles the 8 varients of the W functions in order [M, S", S', P", MP", P', Delta, S'Delta]
-    ! index i handles the 8 isotopes [H, He4, C12, O16, Ne20, Mg24, Si28, S32, Fe56]
+    ! index i handles the 9 isotopes [H, He4, C12, O16, Ne20, Mg24, Si28, S32, Fe56]
     ! index j & k handle the two superscripts for each W function, each taking values of 0 and 1
     ! index L determines the power of each constant ranging from y^0 to y^6
     do m=1,8

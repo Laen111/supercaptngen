@@ -8,13 +8,14 @@
     PROGRAM SUPERCAP
     implicit none
     character*300 :: filename ! writing filename
-    integer :: cpl, i, j      ! loop indicies
-    double precision, parameter :: pi=3.141592653, hbarc = 1.973269804d-14
+    integer :: cpl, i      ! loop indicies
+    double precision, parameter :: pi=3.141592653, hbarc = 1.973269804d-14, mnuc=0.938272088
     double precision :: dm_Density, ejecta_Mass, ISM_Density, dist_SN, energy_SN,age_SN     ! initialization parameters
 
     double precision :: dm_Mass, dm_Spin, dm_Vel ! WIMP dark matter particle parameters
-    integer :: num_isotopes   ! number of isotopes summed over (8 is all of them)
+    integer :: num_isotopes   ! number of isotopes summed over (9 is all of them)
     double precision :: coupleVal ! the value I will be assigning to the couplings when tested
+    double precision :: xSec, mu, effXSec
     double precision :: dm_Scattered    ! (the output) number of scatters calculated at a given mass, spin, and velocity
 
     character (len=5) :: cplConsts(14) = [character(len=5) :: "c1-0", "c3-0", "c4-0", "c5-0", "c6-0", "c7-0", &
@@ -23,10 +24,15 @@
 
     num_isotopes = 9  ! number of isotopes super capt'n will loop over in the calculation: up to 9 isotopes
     dm_Spin = 0.5     ! WIMP dark matter spin
-    ! coupleVal = 1.65d-8
-    ! coupleVal = sqrt(3.14*1.d-30)/(1.*1.973267d-44) ! get a coupling value in GeV^-2 for a specified xSection in cm^2
-    coupleVal = sqrt(16.*pi*1.d-30)/hbarc
-    ! coupleVal = coupleVal / sqrt(0.93732042869226050) ! correct to get xsec exactly 10^-30 cm^2
+    dm_Mass = 1.d0    ! dark matter mass
+    XSec = 1.d-30 ! in cm^2
+    mu = (dm_Mass*mnuc)/(dm_Mass+mnuc)  ! the DM-nucleon reduced mass
+
+    ! coupleVal = 1.65d-8  ! This is the test value Catena uses
+    coupleVal = sqrt(4.*pi*XSec) / mu / hbarc  ! This gives you the coupling from an effective cross section
+    
+    effXSec = (coupleVal*mu*hbarc)**2 / (4.*pi)
+    
 
     print*
     print*, "Initializing Super Capt'n..."
@@ -46,7 +52,7 @@
      ! one unique filename for each coupling constant
      filename = "Oper_"//trim(cplConsts(cpl))//"_Phi.dat"
      open(55,file=filename)
-     write(55,*) "Coupling Constant value: ", coupleVal, "GeV^-2, or approximately", (coupleVal*hbarc)**2 / (16.*pi), "cm^-2"
+     write(55,*) "Coupling Constant value: ", coupleVal, "GeV^-2, or approximately", effXSec, "cm^-2"
      write(55,*) "Dark Matter Mass ", " | ", " Dark Matter Velocity ", " | ", " Dark Matter Scattered"
 
      ! set the one coupling 'cpl' to a default value, skipping c2-0 (the 2nd index is not used)
@@ -63,19 +69,11 @@
 
      print*
      print*, "Running coupling constant: ", cplConsts(cpl)
-     do i = 1,1
-       dm_Mass = 1.d0!10**(dble(i-1)/5.)
-       ! write(55,*) "isotope number", i
-       do j = 1,2001
-        ! dm_Vel = 10**(dble(j-1)/10. + 1.) ! chris' notes test the range of velocities from 10^8 to 10^9 cm s^-1 for SI xSec
-        dm_Vel = 4.32d3*(dble(j)*0.00005 + 1.)
-        ! dm_Vel = 1.d3 * (dble(j-1)/100. + 4.)
-        ! dm_Vel = 4300. + dble(j-1) * (4500.-4300.)/2000.
-        ! dm_Vel = 1. + dble(j-1) * (10000.-1.)/2000.
-        call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, dm_Scattered)
-        write(55,*) dm_Mass, dm_Vel, dm_Scattered
-        print*, "Dark Matter Mass: ", dm_Mass, "Dark Matter Velocity: ", dm_Vel, "Scattered: ", dm_Scattered
-       end do
+     do i = 1,1001
+      dm_Vel = 4.d3 + dble(i-1)  ! chris' notes test the range of velocities from 10^8 to 10^9 cm s^-1 for SI xSec
+      call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, dm_Scattered)
+      write(55,*) dm_Mass, dm_Vel, dm_Scattered
+      print*, "Dark Matter Mass: ", dm_Mass, "Dark Matter Velocity: ", dm_Vel, "Scattered: ", dm_Scattered
      end do
      close(55)
    end do
