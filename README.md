@@ -11,6 +11,5 @@ The test main file shows how to work with Super Capt'n.
 
 ## TODO
 
-- There is still an overall normalization difference between super and Chris' data?
 - Refine user interface to Super Capt'n
-- is there a fixed value we take if the DM kinetic energy exceeds the isotope's max energy transfer?
+- In future: change $V_\text{shock}\left( t \right)$, or include a varying $V_\text{shock}\left( x, t \right)$ with position in the shockwave
