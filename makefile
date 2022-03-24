@@ -7,6 +7,7 @@ RDIR = ./Rfunctions
 
 MAIN = main.o
 SUPER = supermain.o
+runsuper = runsuper.o
 
 SHAREDOBJ = sharedcap.o
 GENOBJ = gencap.o
@@ -32,6 +33,9 @@ gentest.x: $(MAIN) gencaplib.so
 supertest.x: $(SUPER) gencaplib.so
 	${FC} $(FOPT) -L. -Wl,-rpath,. -o $@ $^
 
+getSpectrum.x: $(runsuper) gencaplib.so
+	${FC} $(FOPT) -L. -Wl,-rpath,. -o $@ $^
+
 $(NUMFOBJ): %.o : $(NUMDIR)/%.f
 	$(FC) $(FOPT) -c  $<
 
@@ -51,6 +55,9 @@ $(MAIN): %.o: %.f90
 	$(FC) $(FOPT) -c  $<
 
 $(SUPER): %.o: %.f90
+	$(FC) $(FOPT) -c  $<
+
+$(runsuper): %.o: %.f90
 	$(FC) $(FOPT) -c  $<
 
 $(NUMOBJ): %.o: $(NUMDIR)/%.f
