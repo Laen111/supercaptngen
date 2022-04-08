@@ -142,16 +142,16 @@ end subroutine populate_array_super
 ! jx_in: dark matter spin
 ! vel_in: dark matter final velocity in km s^{-1}
 !
-subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
+subroutine supercaptn(mx_in, jx_in, vel_in, niso, totalScattered)
     use supermod
     implicit none
     double precision, intent(in) :: mx_in, jx_in, vel_in
     integer, intent(in):: niso
-    double precision, intent(out) :: scattered !this is the output
+    double precision, intent(out) :: totalScattered !this is the output
 
-    integer eli, funcType, tau, taup, term_R, term_W, q_pow, w_pow ! loop indicies
-    double precision :: a, J, j_chi, mu_T, vel, time, V_s, R_s    ! parameters
-    double precision :: result, DsigmaDe    ! used to tally results
+    integer eli, funcType, tau, taup, term_R, term_W, q_pow, w_pow, radialIndex ! loop indicies
+    double precision :: a, J, j_chi, mu_T, vel, time, V_s, R_s, V_max    ! parameters
+    double precision :: scattered, result, DsigmaDe    ! used to tally results
 
     ! parameters used in prefactor calculation
     integer :: q_functype, q_index
@@ -166,7 +166,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
     time = age - Dist/vel ! the time (t=0 at SNe detonation) when the DM scattered, in GeV^{-1}
 
     R_s = Rshock(time) ! given in GeV^{-1}
-    V_s = Vshock(time) ! given in c
+    V_max = Vshock(time) ! given in c
 
     if (time .lt. 0.d0) then
         scattered = 0.d0
@@ -270,47 +270,64 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
             end do !functype
         end do !eli
 
-        ! now with all the prefactors computed, any 0.d0 entries in prefactor_array means that we can skip that q^{2n} w^{2m} term
-        scattered = 0.d0
-        do eli=1,niso
+        totalScattered = 0.d0
+        do radialIndex = 0, numRadius-1 ! calculating delta r means I take one less than the number of radial points
+            V_s = V_max ! temporary, I'll need some way to parameterize the VShock(r) function - to start try a linear interpolation from 0-->V_max
+            radius = R_max ! again temp, probably want an array of raius points so that I can get the current radius and the following point 
 
-            a = AtomicNumber_super(eli)
-            J = AtomicSpin_super(eli)
+            ! now with all the prefactors computed, any 0.d0 entries in prefactor_array means that we can skip that q^{2n} w^{2m} term
+            scattered = 0.d0
+            do eli=1,niso
 
-            result = 0.d0
+                a = AtomicNumber_super(eli)
+                J = AtomicSpin_super(eli)
 
-            ! condition on the maximal energy the DM can get from scattering off the SNe as given by Chris
-            ! 1/2 * m_A * V_s^2 * 4 * m_A*m_x/(m_A+m_x)^2
-            if (vel .lt. (2*A*mnuc*V_s)/(A*mnuc + mdm)) then
+                result = 0.d0
 
-                do w_pow=1,2
+                ! condition on the maximal energy the DM can get from scattering off the SNe as given by Chris
+                ! 1/2 * m_A * V_s^2 * 4 * m_A*m_x/(m_A+m_x)^2
+                if (vel .lt. (2*A*mnuc*V_s)/(A*mnuc + mdm)) then
 
-                    do q_pow=1,11
-                        if ( prefactor_array(eli,q_pow,w_pow).ne.0. ) then
-                            ! the energy in the integral is given by delta function: E = (mdm * w^2)/2.
-                            ! the momentum transfer is defined using the energy of moving DM: E = q^2/(mdm*2)
-                            ! gives: q = mdm * w
-                            if ( eli .eq. 1 ) then ! we're doing Hydrogen which doesn't get an exponential in its W function fits
-                                result = result + prefactor_array(eli,q_pow,w_pow) *(mdm*vel)**(2*(q_pow-1)) *(V_s)**(2*(w_pow-1))
-                            else
-                                result = result + prefactor_array(eli,q_pow,w_pow) *(mdm*vel)**(2*(q_pow-1)) *(V_s)**(2*(w_pow-1)) &
-                                    * exp(-2*yConverse_array_super(eli)*(mdm*vel)**2)
+                    do w_pow=1,2
+
+                        do q_pow=1,11
+                            if ( prefactor_array(eli,q_pow,w_pow).ne.0. ) then
+                                ! the energy in the integral is given by delta function: E = (mdm * w^2)/2.
+                                ! the momentum transfer is defined using the energy of moving DM: E = q^2/(mdm*2)
+                                ! gives: q = mdm * w
+                                if ( eli .eq. 1 ) then ! we're doing Hydrogen which doesn't get an exponential in its W function fits
+                                    result = result + prefactor_array(eli,q_pow,w_pow) *(mdm*vel)**(2*(q_pow-1)) &
+                                        * (V_s)**(2*(w_pow-1))
+                                else
+                                    result = result + prefactor_array(eli,q_pow,w_pow) *(mdm*vel)**(2*(q_pow-1)) &
+                                        * (V_s)**(2*(w_pow-1)) * exp(-2*yConverse_array_super(eli)*(mdm*vel)**2)
+                                end if
                             end if
-                        end if
-                    end do !q_pow
-                end do !w_pow
+                        end do !q_pow
+                    end do !w_pow
 
-                DsigmaDe = result * (2. * mdm*c0**2)/(V_s**2 * (2*J+1))
+                    DsigmaDe = result * (2. * mdm*c0**2)/(V_s**2 * (2*J+1))
 
-                scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
-                if ( eli.eq.1 ) then
-                    scattered = scattered + 4./3.*pi*R_s**3*ISM*c0**2 * DsigmaDe
+                    scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
+                    if ( eli.eq.1 ) then
+                        scattered = scattered + 4./3.*pi*R_s**3*ISM*c0**2 * DsigmaDe
+                    end if
                 end if
-            end if
-        end do !eli
+            end do !eli
+            ! Want to multiply the number of DM scattered particles to vel from VShock (scattered) by the number of shockwave particles moving at that velocity
+            ! Given a function that gives VShock(radius), where VShock(D/vel) = VShock(RShock(D/vel)), we can get the number of particles in the spherical shell using the differential element
+            ! 4 pi r^2 dr, and we get the number of particles in this shell by using a volume density rho(r), we can find the number of particles
+            ! 4 pi r^2 rho(r) dr  --  noting that this is also divided by a normalization of the density integrated over the whole volume (0-->RShock(D/vel))
+            ! then we multiply `scattered` by this number of particles moving at a specific Vej (4 pi r^2 rho(r) delta_r / 4/3 pi R^3), where 4/3 pi R^3 is the normalization for a constant rho(R) = 1
+            ! add this weighted number of scatters to a totalScattered, then do the next differential element
+            deltaRadius = nextRadius-radius
+            scattered = scattered * 4*pi*radius**2*deltaRadius * rho(radialIndex) / densityNormalization
 
-        scattered = scattered * (rhoX*V_s*vel)/(4.*pi*Dist**2) !natural units
-        scattered = scattered/hbarc**3 !recover units
+            totalScattered = totalScattered + scattered
+        end do !radialIndex
+
+        totalScattered = totalScattered * (rhoX*V_s*vel)/(4.*pi*Dist**2) !natural units
+        totalScattered = totalScattered/hbarc**3 !recover units
 
     end if !End condition on t > 0
 
