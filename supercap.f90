@@ -142,7 +142,7 @@ end subroutine populate_array_super
 ! jx_in: dark matter spin
 ! vel_in: dark matter final velocity in km s^{-1}
 !
-subroutine supercaptn(mx_in, jx_in, vel_in, niso, totalScattered)
+subroutine supercaptn(mx_in, jx_in, vel_in, niso, nradius, totalScattered)
     use supermod
     implicit none
     double precision, intent(in) :: mx_in, jx_in, vel_in
@@ -150,7 +150,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, totalScattered)
     double precision, intent(out) :: totalScattered !this is the output
 
     integer eli, funcType, tau, taup, term_R, term_W, q_pow, w_pow, radialIndex ! loop indicies
-    double precision :: a, J, j_chi, mu_T, vel, time, V_s, R_s, V_max    ! parameters
+    double precision :: a, J, j_chi, mu_T, vel, time, V_s, R_s, V_max, R_max    ! parameters
     double precision :: scattered, result, DsigmaDe    ! used to tally results
 
     ! parameters used in prefactor calculation
@@ -159,13 +159,19 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, totalScattered)
     double precision :: RD, RM, RMP2, RP1, RP2, RS1, RS1D, RS2 !R functions stored in their own source files
     double precision :: prefactor_array(niso,11,2)
 
+    integer, intent(in) :: nradius
+    double precision :: R_s_Init, R_s_Final, V_s_Init, V_s_Final
+    double precision :: deltaRadius, nextRadius, densityNormalization
+    double precision :: R_s_values(nradius), V_s_values(nradius), rho(nradius)
+
+    if ( nradius .lt. 2 ) stop "The number of shockwave radius points must be at least 2 so that the delta radius can be defined!"
     mdm = mx_in ! input in GeV
     j_chi = jx_in
     vel = vel_in * 1.d5/c1 ! convert km s^{-1} to cm s^{-1} to c
     if ( vel .gt. 1. ) stop "The dark matter velocity cannot exceed the speed of light"
     time = age - Dist/vel ! the time (t=0 at SNe detonation) when the DM scattered, in GeV^{-1}
 
-    R_s = Rshock(time) ! given in GeV^{-1}
+    R_max = Rshock(time) ! given in GeV^{-1}
     V_max = Vshock(time) ! given in c
 
     if (time .lt. 0.d0) then
@@ -270,10 +276,23 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, totalScattered)
             end do !functype
         end do !eli
 
+        R_s_Init = 0.
+        R_s_Final = R_max
+        V_s_Init = 0.
+        V_s_Final = V_max
+        densityNormalization = 4./3. * pi * R_max**3 ! normalization for a constant rho(r) = 1 density
+        ! load up the arrays for each point's V_s, R_s value, and rho value
+        do radialIndex = 0, nradius
+            R_s_values(radialIndex) = R_s_Init + dble(radialIndex-1) * (R_s_Final-R_s_Init)/dble(radialIndex)
+            V_s_values(radialIndex) = V_s_Init + dble(radialIndex-1) * (V_s_Final-V_s_Init)/dble(radialIndex)
+            rho(radialIndex) = 1.
+        end do !radialIndex
+
         totalScattered = 0.d0
-        do radialIndex = 0, numRadius-1 ! calculating delta r means I take one less than the number of radial points
-            V_s = V_max ! temporary, I'll need some way to parameterize the VShock(r) function - to start try a linear interpolation from 0-->V_max
-            radius = R_max ! again temp, probably want an array of raius points so that I can get the current radius and the following point 
+        do radialIndex = 0, nradius-1 ! calculating delta r means I take one less than the number of radial points
+            V_s = V_s_values(radialIndex) ! to start try a linear interpolation from 0-->V_max
+            R_s = R_s_values(radialIndex) ! to start try a linear interpolation from 0-->radius_max
+            nextRadius = R_s_values(radialIndex+1)
 
             ! now with all the prefactors computed, any 0.d0 entries in prefactor_array means that we can skip that q^{2n} w^{2m} term
             scattered = 0.d0
@@ -310,7 +329,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, totalScattered)
 
                     scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
                     if ( eli.eq.1 ) then
-                        scattered = scattered + 4./3.*pi*R_s**3*ISM*c0**2 * DsigmaDe
+                        scattered = scattered + 4./3.*pi*R_max**3*ISM*c0**2 * DsigmaDe ! should R_shock -> R_max?
                     end if
                 end if
             end do !eli
@@ -320,8 +339,8 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, totalScattered)
             ! 4 pi r^2 rho(r) dr  --  noting that this is also divided by a normalization of the density integrated over the whole volume (0-->RShock(D/vel))
             ! then we multiply `scattered` by this number of particles moving at a specific Vej (4 pi r^2 rho(r) delta_r / 4/3 pi R^3), where 4/3 pi R^3 is the normalization for a constant rho(R) = 1
             ! add this weighted number of scatters to a totalScattered, then do the next differential element
-            deltaRadius = nextRadius-radius
-            scattered = scattered * 4*pi*radius**2*deltaRadius * rho(radialIndex) / densityNormalization
+            deltaRadius = nextRadius-R_s
+            scattered = scattered * 4*pi*R_s**2*deltaRadius * rho(radialIndex) / densityNormalization
 
             totalScattered = totalScattered + scattered
         end do !radialIndex
