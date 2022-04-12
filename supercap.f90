@@ -175,7 +175,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, nradius, totalScattered)
     V_max = Vshock(time) ! given in c
 
     if (time .lt. 0.d0) then
-        scattered = 0.d0
+        totalScattered = 0.d0
     else
         do eli = 1, niso
             do q_pow = 1, 11
@@ -282,14 +282,14 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, nradius, totalScattered)
         V_s_Final = V_max
         densityNormalization = 4./3. * pi * R_max**3 ! normalization for a constant rho(r) = 1 density
         ! load up the arrays for each point's V_s, R_s value, and rho value
-        do radialIndex = 0, nradius
+        do radialIndex = 1, nradius
             R_s_values(radialIndex) = R_s_Init + dble(radialIndex-1) * (R_s_Final-R_s_Init)/dble(radialIndex)
             V_s_values(radialIndex) = V_s_Init + dble(radialIndex-1) * (V_s_Final-V_s_Init)/dble(radialIndex)
             rho(radialIndex) = 1.
         end do !radialIndex
 
         totalScattered = 0.d0
-        do radialIndex = 0, nradius-1 ! calculating delta r means I take one less than the number of radial points
+        do radialIndex = 1, nradius-1 ! calculating delta r means I take one less than the number of radial points
             V_s = V_s_values(radialIndex) ! to start try a linear interpolation from 0-->V_max
             R_s = R_s_values(radialIndex) ! to start try a linear interpolation from 0-->radius_max
             nextRadius = R_s_values(radialIndex+1)
