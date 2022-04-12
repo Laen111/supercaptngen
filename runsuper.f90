@@ -16,11 +16,11 @@ program RunSuper
 
 
 ! Filename
-    filename = "test.dat" ! the file you want to write to
+    filename = "TempVShock/test1000.dat" ! the file you want to write to
 ! Velocity range
     velInit = 4300.00    ! starting velocity [km s^-1]
     velFinal = 4500.00   ! ending velocity [km s^-1]
-    velNum = 100       ! integer number of velocity steps
+    velNum = 10000       ! integer number of velocity steps
 !-----------------------------------------------------------------------------------------------------------------------------------
 ! Dark matter parameters
     dm_Mass = 1.d0 ! dark matter mass
@@ -118,7 +118,7 @@ program RunSuper
     print*, "Starting calculation..."
     do i = 1,velNum+1   ! create velocity velNum points linearly spaced on the range velInit to velFinal
         dm_Vel = velInit + dble(i-1) * (velFinal-velInit)/dble(velNum)
-        call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, 100, dm_Scattered)
+        call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, 1000, dm_Scattered)
         write(55,*) dm_Vel, dm_Scattered
     end do
 
