@@ -161,7 +161,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, nradius, totalScattered)
 
     integer, intent(in) :: nradius
     double precision :: R_s_Init, R_s_Final, V_s_Init, V_s_Final
-    double precision :: deltaRadius, nextRadius, densityNormalization
+    double precision :: deltaRadius, prevRadius, densityNormalization
     double precision :: R_s_values(nradius), V_s_values(nradius), rho(nradius)
 
     if ( nradius .lt. 2 ) stop "The number of shockwave radius points must be at least 2 so that the delta radius can be defined!"
@@ -292,7 +292,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, nradius, totalScattered)
         do radialIndex = 2, nradius+1 ! calculating delta r means I take one less than the number of radial points
             V_s = V_s_values(radialIndex) ! to start try a linear interpolation from 0-->V_max
             R_s = R_s_values(radialIndex) ! to start try a linear interpolation from 0-->radius_max
-            nextRadius = R_s_values(radialIndex+1)
+            prevRadius = R_s_values(radialIndex-1)
 
             ! now with all the prefactors computed, any 0.d0 entries in prefactor_array means that we can skip that q^{2n} w^{2m} term
             scattered = 0.d0
@@ -339,7 +339,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, nradius, totalScattered)
             ! 4 pi r^2 rho(r) dr  --  noting that this is also divided by a normalization of the density integrated over the whole volume (0-->RShock(D/vel))
             ! then we multiply `scattered` by this number of particles moving at a specific Vej (4 pi r^2 rho(r) delta_r / 4/3 pi R^3), where 4/3 pi R^3 is the normalization for a constant rho(R) = 1
             ! add this weighted number of scatters to a totalScattered, then do the next differential element
-            deltaRadius = nextRadius-R_s
+            deltaRadius = R_s-prevRadius
             scattered = scattered * 4*pi*R_s**2*deltaRadius * rho(radialIndex) / densityNormalization
             scattered = scattered * (rhoX*V_s*vel)/(4.*pi*Dist**2) !natural units
 
