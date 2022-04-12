@@ -282,14 +282,14 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, nradius, totalScattered)
         V_s_Final = V_max
         densityNormalization = 4./3. * pi * R_max**3 ! normalization for a constant rho(r) = 1 density
         ! load up the arrays for each point's V_s, R_s value, and rho value
-        do radialIndex = 1, nradius
-            R_s_values(radialIndex) = R_s_Init + dble(radialIndex-1) * (R_s_Final-R_s_Init)/dble(radialIndex)
-            V_s_values(radialIndex) = V_s_Init + dble(radialIndex-1) * (V_s_Final-V_s_Init)/dble(radialIndex)
+        do radialIndex = 1, nradius+1
+            R_s_values(radialIndex) = R_s_Init + dble(radialIndex-1) * (R_s_Final-R_s_Init)/dble(nradius)
+            V_s_values(radialIndex) = V_s_Init + dble(radialIndex-1) * (V_s_Final-V_s_Init)/dble(nradius)
             rho(radialIndex) = 1.
         end do !radialIndex
 
         totalScattered = 0.d0
-        do radialIndex = 1, nradius-1 ! calculating delta r means I take one less than the number of radial points
+        do radialIndex = 2, nradius+1 ! calculating delta r means I take one less than the number of radial points
             V_s = V_s_values(radialIndex) ! to start try a linear interpolation from 0-->V_max
             R_s = R_s_values(radialIndex) ! to start try a linear interpolation from 0-->radius_max
             nextRadius = R_s_values(radialIndex+1)
@@ -341,11 +341,11 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, nradius, totalScattered)
             ! add this weighted number of scatters to a totalScattered, then do the next differential element
             deltaRadius = nextRadius-R_s
             scattered = scattered * 4*pi*R_s**2*deltaRadius * rho(radialIndex) / densityNormalization
+            scattered = scattered * (rhoX*V_s*vel)/(4.*pi*Dist**2) !natural units
 
             totalScattered = totalScattered + scattered
         end do !radialIndex
 
-        totalScattered = totalScattered * (rhoX*V_s*vel)/(4.*pi*Dist**2) !natural units
         totalScattered = totalScattered/hbarc**3 !recover units
 
     end if !End condition on t > 0
