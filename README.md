@@ -14,4 +14,4 @@ The program can be run to get a velocity spectrum using the `runsuper.f90` main 
 ## TODO
 
 - In future: change $V_\text{shock}\left( t \right)$, or include a varying $V_\text{shock}\left( x, t \right)$ with position in the shockwave
-- Should $R_{Shock}$ be turned into $R_{max}$ in the ISM delta component?
+- Double check the uses of $V_{\rm Shock}$ and $R_{\rm Shock}$ in the interpolation loop to see if it should be the maximum value instead
