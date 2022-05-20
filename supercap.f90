@@ -290,6 +290,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, nradius, totalScattered)
 
         totalScattered = 0.d0
         do radialIndex = 2, nradius+1 ! calculating delta r means I take one less than the number of radial points
+            ! CAUTION: we have assumed that V_s and R_s are linear with eachother (otherwise need to interpolate time, and pick values based on time values)
             V_s = V_s_values(radialIndex) ! to start try a linear interpolation from 0-->V_max
             R_s = R_s_values(radialIndex) ! to start try a linear interpolation from 0-->radius_max
             prevRadius = R_s_values(radialIndex-1)
