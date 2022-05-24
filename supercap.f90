@@ -99,6 +99,48 @@ module supermod
 
     end function Vshock
 
+    ! adapted the catpn GFFI so that the limits run from E=0 to E = 2 m_x * ( (m_i*V_s)/(m_i + m_x) )**2, and Ekin is now 1/2 m_i V_s^2, momentum is now p = m_i * V_s
+    function GFFI_H_oper(V_s, mq)
+        double precision :: GFFI_H_oper
+        double precision :: V_s
+        integer :: mq
+        double precision :: Emax!, p,  mu
+
+        ! p = mnuc * V_s
+        ! mu = mdm/mnuc
+        Emax = 2*mdm * ( (mnuc*V_s)/(mnuc + mdm) )**2
+
+        if (mq >= 0) then
+            ! GFFI_H_oper = (p**2 * mu)**mq * Ekin * 1./(1.+mq) * (Emax/Ekin)**(mq+1)
+            GFFI_H_oper = (2.d0 * mdm)**mq * Emax**(mq+1)/(mq + 1.d0)
+        else
+            stop "You cannot pass a negative integer to GFFI"
+        end if
+
+    end function GFFI_H_oper
+    
+    function GFFI_A_oper(V_s,A,mq)
+        double precision :: GFFI_A_oper
+        double precision :: V_s, A
+        integer :: mq
+        double precision :: Emax, mN, Ei!, p, mu
+        double precision :: dgamic
+        
+        ! p = mN * V_s
+        ! mu = mdm / (mN)
+        mN = A*mnuc
+        Emax = 2*mdm * ( (mN*V_s)/(mN + mdm) )**2
+        ! Ei = 1./4.d0/mN/264.114*(45.d0*A**(-1./3.)-25.d0*A**(-2./3.))
+        Ei = 9.39010d-4/mdm * (45.d0*A**(-1./3.)-25.d0*A**(-2./3.)) ! this is hbarc^2 / mdm * (1/b)^2, pulling b from page 10 of [arxiv:1501.03729]
+
+        if (mq == 0) then
+            GFFI_A_oper = Ei * (1.d0 - exp(-Emax/Ei))
+        else
+            GFFI_A_oper = (2.d0 * mdm)**mq * Ei**2 * (gamma(1.d0 + dble(mq)) - dgamic(1.+dble(mq), Emax/Ei))
+        end if
+
+    end function GFFI_A_oper
+
 end module supermod
 
 
@@ -151,7 +193,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
     integer eli, funcType, tau, taup, term_R, term_W, q_pow, w_pow ! loop indicies
     double precision :: a, J, j_chi, mu_T, vel, time, V_s, R_s    ! parameters
-    double precision :: result, DsigmaDe    ! used to tally results
+    double precision :: result, DsigmaDe, N_i, sigma_i, scatteringCheck    ! used to tally results
 
     ! parameters used in prefactor calculation
     integer :: q_functype, q_index
@@ -271,11 +313,15 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
         end do !eli
 
         ! now with all the prefactors computed, any 0.d0 entries in prefactor_array means that we can skip that q^{2n} w^{2m} term
+        scatteringCheck = 0.d0
         scattered = 0.d0
         do eli=1,niso
 
             a = AtomicNumber_super(eli)
             J = AtomicSpin_super(eli)
+
+            sigma_i = 0.d0
+            N_i = MassFrac_super(eli)*Mej / (4*pi*mnuc*a*R_s**2)
 
             result = 0.d0
 
@@ -292,9 +338,11 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                             ! gives: q = mdm * w
                             if ( eli .eq. 1 ) then ! we're doing Hydrogen which doesn't get an exponential in its W function fits
                                 result = result + prefactor_array(eli,q_pow,w_pow) *(mdm*vel)**(2*(q_pow-1)) *(V_s)**(2*(w_pow-1))
+                                sigma_i = sigma_i + prefactor_array(eli,q_pow,w_pow)*(V_s)**(2*(w_pow-1))*GFFI_H_oper(V_s,q_pow-1)!(mdm*vel)**(2*(q_pow-1)) STUFF FROM GFFI
                             else
                                 result = result + prefactor_array(eli,q_pow,w_pow) *(mdm*vel)**(2*(q_pow-1)) *(V_s)**(2*(w_pow-1)) &
                                     * exp(-2*yConverse_array_super(eli)*(mdm*vel)**2)
+                                sigma_i = sigma_i + prefactor_array(eli,q_pow,w_pow)*(V_s)**(2*(w_pow-1))*GFFI_A_oper(V_s,a,q_pow-1)!(mdm*vel)**(2*(q_pow-1)) * exp(-2*yConverse_array_super(eli)*(mdm*vel)**2) STUFF FROM GFFI
                             end if
                         end if
                     end do !q_pow
@@ -306,10 +354,15 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                 if ( eli.eq.1 ) then
                     scattered = scattered + 4./3.*pi*R_s**3*ISM*c0**2 * DsigmaDe
                 end if
+
+                scatteringCheck = scatteringCheck + N_i*sigma_i
+
             end if
         end do !eli
 
         scattered = scattered * (rhoX*V_s*vel)/(4.*pi*Dist**2) !natural units
+        if ( scatteringCheck > 1.d0 ) scattered = scattered / (2*scatteringCheck)   ! should this be doen before recovering out of natural units?
+
         scattered = scattered/hbarc**3 !recover units
 
     end if !End condition on t > 0
