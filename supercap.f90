@@ -135,8 +135,10 @@ module supermod
 
         if (mq == 0) then
             GFFI_A_oper = Ei * (1.d0 - exp(-Emax/Ei))
+        else if (mq > 0) then
+            GFFI_A_oper = (2.d0 * mdm)**mq * Ei**(1 + mq) * (gamma(1.d0 + dble(mq)) - dgamic(1.+dble(mq), Emax/Ei))
         else
-            GFFI_A_oper = (2.d0 * mdm)**mq * Ei**2 * (gamma(1.d0 + dble(mq)) - dgamic(1.+dble(mq), Emax/Ei))
+            stop "You cannot pass a negative integer to GFFI"
         end if
 
     end function GFFI_A_oper
@@ -349,6 +351,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
                 end do !w_pow
 
                 DsigmaDe = result * (2. * mdm*c0**2)/(V_s**2 * (2*J+1))
+                sigma_i = sigma_i * (2. * mdm*c0**2)/(V_s**2 * (2*J+1))
 
                 scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
                 if ( eli.eq.1 ) then
