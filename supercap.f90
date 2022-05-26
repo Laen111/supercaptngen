@@ -186,16 +186,16 @@ end subroutine populate_array_super
 ! jx_in: dark matter spin
 ! vel_in: dark matter final velocity in km s^{-1}
 !
-subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
+subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered, scatteringCheck)
     use supermod
     implicit none
     double precision, intent(in) :: mx_in, jx_in, vel_in
     integer, intent(in):: niso
-    double precision, intent(out) :: scattered !this is the output
+    double precision, intent(out) :: scattered, scatteringCheck !this is the output
 
     integer eli, funcType, tau, taup, term_R, term_W, q_pow, w_pow ! loop indicies
     double precision :: a, J, j_chi, mu_T, vel, time, V_s, R_s    ! parameters
-    double precision :: result, DsigmaDe, N_i, sigma_i, scatteringCheck    ! used to tally results
+    double precision :: result, DsigmaDe, N_i, sigma_i    ! used to tally results
 
     ! parameters used in prefactor calculation
     integer :: q_functype, q_index
@@ -214,6 +214,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
 
     if (time .lt. 0.d0) then
         scattered = 0.d0
+        scatteringCheck = 0.d0
     else
         do eli = 1, niso
             do q_pow = 1, 11
@@ -364,8 +365,10 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered)
         end do !eli
 
         scattered = scattered * (rhoX*V_s*vel)/(4.*pi*Dist**2) !natural units
-        if ( scatteringCheck > 1.d0 ) scattered = scattered / (2*scatteringCheck)   ! should this be doen before recovering out of natural units?
-
+        if ( scatteringCheck > 1.d0 ) then
+            scattered = scattered / (2*scatteringCheck)
+            ! print*, "Scattering opacity check is greater than 1.0:", scatteringCheck
+        end if
         scattered = scattered/hbarc**3 !recover units
 
     end if !End condition on t > 0

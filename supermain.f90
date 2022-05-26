@@ -16,7 +16,7 @@
     integer :: num_isotopes   ! number of isotopes summed over (9 is all of them)
     double precision :: coupleVal ! the value I will be assigning to the couplings when tested
     double precision :: xSec, mu, effXSec
-    double precision :: dm_Scattered    ! (the output) number of scatters calculated at a given mass, spin, and velocity
+    double precision :: dm_Scattered, scatteringOpacityCond    ! (the output) number of scatters calculated at a given mass, spin, and velocity
 
     character (len=5) :: cplConsts(14) = [character(len=5) :: "c1-0", "c3-0", "c4-0", "c5-0", "c6-0", "c7-0", &
                         "c8-0", "c9-0", "c10-0", "c11-0", "c12-0", "c13-0", "c14-0", "c15-0"]
@@ -53,7 +53,7 @@
      filename = "Oper_"//trim(cplConsts(cpl))//"_Phi.dat"
      open(55,file=filename)
      write(55,*) "Coupling Constant value: ", coupleVal, "GeV^-2, or approximately", effXSec, "cm^-2"
-     write(55,*) "Dark Matter Mass ", " | ", " Dark Matter Velocity ", " | ", " Dark Matter Scattered"
+     write(55,*) "Dark Matter Mass ", " | ", " Dark Matter Velocity ", " | ", " Dark Matter Scattered", " | ", " Opacity Condition"
 
      ! set the one coupling 'cpl' to a default value, skipping c2-0 (the 2nd index is not used)
      ! zero out the old coupling so that only the desired coupling is non-zero
@@ -71,9 +71,10 @@
      print*, "Running coupling constant: ", cplConsts(cpl)
      do i = 1,1001
       dm_Vel = 4.d3 + dble(i-1)  ! chris' notes test the range of velocities from 10^8 to 10^9 cm s^-1 for SI xSec
-      call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, dm_Scattered)
-      write(55,*) dm_Mass, dm_Vel, dm_Scattered
-      print*, "Dark Matter Mass: ", dm_Mass, "Dark Matter Velocity: ", dm_Vel, "Scattered: ", dm_Scattered
+      call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, dm_Scattered, scatteringOpacityCond)
+      write(55,*) dm_Mass, dm_Vel, dm_Scattered, scatteringOpacityCond
+      print*, "Dark Matter Mass: ", dm_Mass, "Dark Matter Velocity: ", dm_Vel, "Scattered: ", dm_Scattered, &
+        "Opacity: ", scatteringOpacityCond
      end do
      close(55)
    end do

@@ -11,7 +11,7 @@ program RunSuper
     double precision :: mu ! reduced dm-nucleon mass
     double precision :: velInit, velFinal ! velocity range parameters
     integer :: velNum ! velocity range parameter
-    double precision :: dm_Scattered    ! (the output) number of scatters calculated at a given mass, spin, and velocity
+    double precision :: dm_Scattered, scatteringOpacityCond    ! (the output) number of scatters calculated at a given mass, spin, and velocity
     character (len=2) :: int_str
 
 
@@ -111,15 +111,17 @@ program RunSuper
 
     write(55,*)! writing a blank line
     write(55,*) "To extract the data into python numpy arrays using one line: ", &
-                "velArray, scatterArray = numpy.loadtxt(filename.dat, skiprows=21).T"
-    write(55,*) "Dark Matter Velocity [km s^-1]", " | ", " Dark Matter Scattered [(cm s^-1)^-1 (s)^-1 (cm^2)^-1]"
+                "velArray, scatterArray, opacityCond = numpy.loadtxt(filename, skiprows=21).T"
+    write(55,*) "Dark Matter Velocity [km s^-1]", " | ", &
+        " Dark Matter Scattered [(cm s^-1)^-1 (s)^-1 (cm^2)^-1]", " | ", &
+        " Scattering Opacity Condition [unitless]"
 
     ! calculate all the scatterings and write to the file
     print*, "Starting calculation..."
     do i = 1,velNum+1   ! create velocity velNum points linearly spaced on the range velInit to velFinal
         dm_Vel = velInit + dble(i-1) * (velFinal-velInit)/dble(velNum)
-        call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, dm_Scattered)
-        write(55,*) dm_Vel, dm_Scattered
+        call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, dm_Scattered, scatteringOpacityCond)
+        write(55,*) dm_Vel, dm_Scattered, scatteringOpacityCond
     end do
 
     close(55)
