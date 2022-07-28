@@ -3,7 +3,8 @@ program RunSuper
     character*300 :: filename ! writing filename
     integer :: i ! loop indicies
     double precision, parameter :: pi=3.141592653, hbarc = 1.973269804d-14, mnuc=0.938272088
-    double precision :: dm_Density, ejecta_Mass, ISM_Density, dist_SN, energy_SN,age_SN ! initialization parameters
+    double precision :: dm_Density, ejecta_Mass, ISM_Density, dist_SN, energy_SN,age_SN, stellar_wind_vel, stellar_mass_loss ! initialization parameters
+    integer :: novaTypeSelection
 
     double precision :: dm_Mass, dm_Spin, dm_Vel ! WIMP dark matter particle parameters
     integer :: num_isotopes=9   ! number of isotopes summed over (9 is all of them)
@@ -70,7 +71,11 @@ program RunSuper
     dist_SN = 300. ! pc
     energy_SN = 8.d50 ! erg
     age_SN = 6.8d4 ! years
-    call supercaptn_init(dm_Density, ejecta_Mass, ISM_Density, dist_SN, energy_SN, age_SN)
+    novaTypeSelection = 2 ! 1:type Ia (old) 2:type II (new)
+    stellar_wind_vel = 10. ! km s^{-1}
+    stellar_mass_loss = 1.d-5 ! m_Sun yr^{-1}
+    call supercaptn_init(dm_Density, ejecta_Mass, ISM_Density, dist_SN, energy_SN, age_SN, &
+                            novaTypeSelection, stellar_wind_vel, stellar_mass_loss)
 
 !-----------------------------------------------------------------------------------------------------------------------------------
 ! Main script follows
