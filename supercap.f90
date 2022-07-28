@@ -366,7 +366,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered, scatteringCheck)
 
                 scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
                 if ( eli.eq.1 ) then
-                    scattered = scattered + 4./3.*pi*R_s**3*ISM*c0**2 * DsigmaDe
+                    scattered = scattered + (R_s*Mdot)/(V_w*mnuc) * DsigmaDe
                 end if
 
                 scatteringCheck = scatteringCheck + N_i*sigma_i
