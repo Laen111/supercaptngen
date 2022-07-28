@@ -48,7 +48,8 @@ module supermod
     double precision :: W_array_super(8,9,2,2,7)
     double precision :: yConverse_array_super(9)
 
-    double precision :: mdm, rhoX, Mej, ISM, Dist, Esn, Age
+    double precision :: mdm, rhoX, Mej, ISM, Dist, Esn, Age, V_w, Mdot
+    integer :: novaType
 
     contains
 
@@ -57,10 +58,19 @@ module supermod
     implicit none
     double precision :: lam_FE, Lam_ST, R_0, t_0
         ! from Chris' notes
-        lam_FE = 4./7.
-        lam_ST = 2./5.
-        R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
-        t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)  ! include missing units of c to get t_0 in sec
+        if ( novaType == 1 ) then
+            lam_FE = 4./7.
+            lam_ST = 2./5.
+            R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
+            t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)  ! include missing units of c to get t_0 in sec
+        else if ( novaType == 2 ) then
+            lam_FE = 6./7.
+            lam_ST = 2./3.
+            R_0 = Mej*V_w/Mdot
+            t_0 = R_0**(7./3.) * ( Mdot/(36*pi) * (18*Mej)**(2)/(40*Esn)**(3) )**(1./3.)
+        else
+            stop "novaType can only be 1 (type Ia) or 2 (type II)."
+        end if
     end subroutine novaParameters
 
     ! This gives you the radius of the SNe shockwave front as a function of time
@@ -375,29 +385,33 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, scattered, scatteringCheck)
 
 end subroutine supercaptn
 
-subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in)
+subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in, novaTypeChosen, V_w_in, Mdot_in)
     ! input velocities in km/s, not cm/s!!!
     use supermod
     implicit none
-    double precision, intent(in) :: rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in
+    double precision, intent(in) :: rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in, V_w_in, Mdot_in
+    integer, intent(in) :: novaTypeChosen
 
     integer :: i, j, k, l, m
     character (len=2) :: terms(7) = [character(len=2) :: "y0", "y1", "y2", "y3", "y4", "y5", "y6"]
     real :: WM, WS2, WS1, WP2, WMP2, WP1, WD, WS1D
 
     ! load values into module
-    rhoX = rhoX_in*hbarc**3 ! loaded in GeV cm^{-3} -> GeV^4
-    Mej = Mej_in * kg_SolarM * GeV_kg ! convert Solar Masses to kg to GeV c^{-2}
-    ISM = ISM_in*hbarc**3 ! loaded in cm^{-3}
-    Dist = Dist_in * cm_parsec / hbarc ! convert pc to cm to GeV^-1
-    Age = Age_in*year/hbar !GeV^-1
-    Esn = Esn_in * GeV_ergs ! convert ergs to GeV
+    rhoX = rhoX_in*hbarc**3 ! loaded in GeV cm^{-3} -> GeV^{4}
+    Mej = Mej_in * kg_SolarM * GeV_kg ! loaded in Solar Masses -> kg -> GeV
+    ISM = ISM_in*hbarc**3 ! loaded in cm^{-3} -> GeV^{3}
+    Dist = Dist_in * cm_parsec / hbarc ! loaded in pc -> cm -> GeV^{-1}
+    Age = Age_in*year/hbar ! loaded in years -> seconds -> GeV^{-1}
+    Esn = Esn_in * GeV_ergs ! loaded in ergs -> GeV
+    V_w = V_w_in * 100000 / c0 ! loaded in km/s -> cm/s -> unitless
+    Mdot = Mdot_in * kg_SolarM * GeV_kg / year * hbar ! loaded in MSun/yr -> kg/yr -> GeV/yr -> GeV/s -> GeV 
 
+    novaType = novaTypeChosen
     ! mass fraction is given by MassFrac_super, from SNe sims
     ! it doesn't vary with a radial coordinate, so it is only a fixed frac per isotope
 
     ! this array stores each of the constants of the W polynomials from paper arxiv:1501.03729's appendix individually
-    ! array index m handles the 8 varients of the W functions in order [M, S", S', P", MP", P', Delta, S'Delta]
+    ! array index m handles the 8 variants of the W functions in order [M, S", S', P", MP", P', Delta, S'Delta]
     ! index i handles the 9 isotopes [H, He4, C12, O16, Ne20, Mg24, Si28, S32, Fe56]
     ! index j & k handle the two superscripts for each W function, each taking values of 0 and 1
     ! index L determines the power of each constant ranging from y^0 to y^6
