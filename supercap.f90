@@ -67,7 +67,7 @@ module supermod
             lam_FE = 6./7.
             lam_ST = 2./3.
             R_0 = Mej*V_w/Mdot
-            t_0 = R_0**(7./3.) * ( Mdot/(36*pi) * (18*Mej)**(2)/(40*Esn)**(3) )**(1./3.)
+            t_0 = R_0**(7./6.) * ( 9*Mdot/V_w * (18*Mej)**(2)/(40*Esn)**(3) )**(1./6.)
         else
             stop "novaType can only be 1 (type Ia) or 2 (type II)."
         end if
@@ -403,7 +403,7 @@ subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in, nov
     Dist = Dist_in * cm_parsec / hbarc ! loaded in pc -> cm -> GeV^{-1}
     Age = Age_in*year/hbar ! loaded in years -> seconds -> GeV^{-1}
     Esn = Esn_in * GeV_ergs ! loaded in ergs -> GeV
-    V_w = V_w_in * 100000 / c0 ! loaded in km/s -> cm/s -> unitless
+    V_w = V_w_in * 100000 / c1 ! loaded in km/s -> cm/s -> unitless
     Mdot = Mdot_in * kg_SolarM * GeV_kg / year * hbar ! loaded in MSun/yr -> kg/yr -> GeV/yr -> GeV/s -> GeV^{2}
 
     novaType = novaTypeChosen
