@@ -404,7 +404,7 @@ subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in, nov
     Age = Age_in*year/hbar ! loaded in years -> seconds -> GeV^{-1}
     Esn = Esn_in * GeV_ergs ! loaded in ergs -> GeV
     V_w = V_w_in * 100000 / c0 ! loaded in km/s -> cm/s -> unitless
-    Mdot = Mdot_in * kg_SolarM * GeV_kg / year * hbar ! loaded in MSun/yr -> kg/yr -> GeV/yr -> GeV/s -> GeV 
+    Mdot = Mdot_in * kg_SolarM * GeV_kg / year * hbar ! loaded in MSun/yr -> kg/yr -> GeV/yr -> GeV/s -> GeV^{2}
 
     novaType = novaTypeChosen
     ! mass fraction is given by MassFrac_super, from SNe sims
