@@ -7,7 +7,7 @@ program RunSuper
     integer :: novaTypeSelection
 
     double precision :: dm_Mass, dm_Spin, dm_Vel ! WIMP dark matter particle parameters
-    integer :: num_isotopes=9   ! number of isotopes summed over (9 is all of them)
+    integer :: num_isotopes=11   ! number of isotopes summed over (11 is all of them)
     double precision :: coupleValArray(15,2) ! the value I will be assigning to the couplings when tested
     double precision :: mu ! reduced dm-nucleon mass
     double precision :: velInit, velFinal ! velocity range parameters
