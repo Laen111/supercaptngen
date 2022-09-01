@@ -38,11 +38,11 @@ module supermod
                                                             0., & ! {}^{32}\text{S}
                                                             0. & ! {}^{56}\text{Fe}
                                                             /) !spins pulled from https://physics.nist.gov/PhysRefData/Handbook/element_name.htm
-    double precision, parameter :: MassFrac_super(11) = (/   0.493, & ! {}^{1}\text{H}
-                                                            0.35, & ! {}^{4}\text{He}
+    double precision, parameter :: MassFrac_super(11) = (/  0.491, & ! {}^{1}\text{H}
+                                                            0.348, & ! {}^{4}\text{He}
                                                             0.015, & ! {}^{12}\text{C}
                                                             0.004, & ! {}^{14}\text{N}
-                                                            0.1, & ! {}^{16}\text{O}
+                                                            0.0996, & ! {}^{16}\text{O}
                                                             0.005, & ! {}^{20}\text{Ne}
                                                             0.0004, & ! {}^{23}\text{Na}
                                                             0.005, & ! {}^{24}\text{Mg}
