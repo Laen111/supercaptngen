@@ -64,3 +64,4 @@ It also contains generalised form factor integrals (GFFIs), which are from [arXi
 
 - In future: change $V_\text{shock}\left( t \right)$, or include a varying $V_\text{shock}\left( x, t \right)$ with position in the shockwave
 - Double check the uses of $V_{\rm Shock}$ and $R_{\rm Shock}$ in the interpolation loop to see if it should be the maximum value instead
+- Double check that the opacity condition still behaves in the variable vshock version
