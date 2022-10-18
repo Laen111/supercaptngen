@@ -17,11 +17,11 @@ program RunSuper
 
 
 ! Filename
-    filename = "TempVShock/test10000.dat" ! the file you want to write to
+    filename = "TempVShock/test100c1-new.dat" ! the file you want to write to
 ! Velocity range
     velInit = 4300.00    ! starting velocity [km s^-1]
     velFinal = 4600.00   ! ending velocity [km s^-1]
-    velNum = 10000       ! integer number of velocity steps
+    velNum = 100         ! integer number of velocity steps
 !-----------------------------------------------------------------------------------------------------------------------------------
 ! Dark matter parameters
     dm_Mass = 1.d0 ! dark matter mass
