@@ -3,15 +3,16 @@ program RunSuper
     character*300 :: filename ! writing filename
     integer :: i ! loop indicies
     double precision, parameter :: pi=3.141592653, hbarc = 1.973269804d-14, mnuc=0.938272088
-    double precision :: dm_Density, ejecta_Mass, ISM_Density, dist_SN, energy_SN,age_SN ! initialization parameters
+    double precision :: dm_Density, ejecta_Mass, ISM_Density, dist_SN, energy_SN,age_SN, stellar_wind_vel, stellar_mass_loss ! initialization parameters
+    integer :: novaTypeSelection
 
     double precision :: dm_Mass, dm_Spin, dm_Vel ! WIMP dark matter particle parameters
-    integer :: num_isotopes=9   ! number of isotopes summed over (9 is all of them)
+    integer :: num_isotopes=11   ! number of isotopes summed over (11 is all of them)
     double precision :: coupleValArray(15,2) ! the value I will be assigning to the couplings when tested
     double precision :: mu ! reduced dm-nucleon mass
     double precision :: velInit, velFinal ! velocity range parameters
     integer :: velNum ! velocity range parameter
-    double precision :: dm_Scattered    ! (the output) number of scatters calculated at a given mass, spin, and velocity
+    double precision :: dm_Scattered, scatteringOpacityCond    ! (the output) number of scatters calculated at a given mass, spin, and velocity
     character (len=2) :: int_str
 
 
@@ -70,7 +71,11 @@ program RunSuper
     dist_SN = 300. ! pc
     energy_SN = 8.d50 ! erg
     age_SN = 6.8d4 ! years
-    call supercaptn_init(dm_Density, ejecta_Mass, ISM_Density, dist_SN, energy_SN, age_SN)
+    novaTypeSelection = 2 ! 1:type Ia (old) 2:type II (new)
+    stellar_wind_vel = 10. ! km s^{-1}
+    stellar_mass_loss = 1.d-5 ! m_Sun yr^{-1}
+    call supercaptn_init(dm_Density, ejecta_Mass, ISM_Density, dist_SN, energy_SN, age_SN, &
+                            novaTypeSelection, stellar_wind_vel, stellar_mass_loss)
 
 !-----------------------------------------------------------------------------------------------------------------------------------
 ! Main script follows
@@ -111,15 +116,17 @@ program RunSuper
 
     write(55,*)! writing a blank line
     write(55,*) "To extract the data into python numpy arrays using one line: ", &
-                "velArray, scatterArray = numpy.loadtxt(filename.dat, skiprows=21).T"
-    write(55,*) "Dark Matter Velocity [km s^-1]", " | ", " Dark Matter Scattered [(cm s^-1)^-1 (s)^-1 (cm^2)^-1]"
+                "velArray, scatterArray, opacityCond = numpy.loadtxt(filename, skiprows=21).T"
+    write(55,*) "Dark Matter Velocity [km s^-1]", " | ", &
+        " Dark Matter Scattered [(cm s^-1)^-1 (s)^-1 (cm^2)^-1]", " | ", &
+        " Scattering Opacity Condition [unitless]"
 
     ! calculate all the scatterings and write to the file
     print*, "Starting calculation..."
     do i = 1,velNum+1   ! create velocity velNum points linearly spaced on the range velInit to velFinal
         dm_Vel = velInit + dble(i-1) * (velFinal-velInit)/dble(velNum)
-        call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, 10000, dm_Scattered)
-        write(55,*) dm_Vel, dm_Scattered
+        call supercaptn(dm_Mass, dm_Spin, dm_Vel, num_isotopes, 10000, dm_Scattered, scatteringOpacityCond)
+        write(55,*) dm_Vel, dm_Scattered, scatteringOpacityCond
     end do
 
     close(55)

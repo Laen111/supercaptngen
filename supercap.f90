@@ -22,33 +22,40 @@ module supermod
     double precision, parameter :: GeV_kg=5.60958860d26 !GeV*kg^-1
     double precision, parameter :: cm_parsec=3.08567758149d18 !cm*pc^-1
     double precision, parameter :: GeV_ergs=624.151 !GeV*ergs^-1
-    double precision, parameter :: AtomicNumber_super(9) = (/ 1., 4., 12., 16., 20., 24., 28., 32., 56. /) !the isotopes the catena paper uses
-    character (len=4) :: isotopes_super(9) = [character(len=4) :: "H", "He4", "C12", "O16", "Ne20", "Mg24", "Si28", "S32", "Fe56"] !the isotopes in text form to match against the W functions
-    double precision, parameter :: AtomicSpin_super(9) = (/ 0.5, & ! {}^{1}\text{H}
+    double precision, parameter :: AtomicNumber_super(11) = (/ 1., 4., 12., 14., 16., 20., 23., 24., &
+                                                                28., 32., 56. /) !the isotopes the catena paper uses
+    character (len=4) :: isotopes_super(11) = [character(len=4) :: "H", "He4", "C12", "N14", "O16", "Ne20", "Na23", "Mg24", &
+                                                                    "Si28", "S32", "Fe56"] !the isotopes in text form to match against the W functions
+    double precision, parameter :: AtomicSpin_super(11) = (/ 0.5, & ! {}^{1}\text{H}
                                                             0., & ! {}^{4}\text{He}
                                                             0., & ! {}^{12}\text{C}
+                                                            1., & ! {}^{14}\text{N}
                                                             0., & ! {}^{16}\text{O}
                                                             0., & ! {}^{20}\text{Ne}
+                                                            1.5, & ! {}^{23}\text{Na}
                                                             0., & ! {}^{24}\text{Mg}
                                                             0., & ! {}^{28}\text{Si}
                                                             0., & ! {}^{32}\text{S}
                                                             0. & ! {}^{56}\text{Fe}
                                                             /) !spins pulled from https://physics.nist.gov/PhysRefData/Handbook/element_name.htm
-    double precision, parameter :: MassFrac_super(9) = (/   0.493, & ! {}^{1}\text{H}
-                                                            0.35, & ! {}^{4}\text{He}
+    double precision, parameter :: MassFrac_super(11) = (/  0.491, & ! {}^{1}\text{H}
+                                                            0.348, & ! {}^{4}\text{He}
                                                             0.015, & ! {}^{12}\text{C}
-                                                            0.1, & ! {}^{16}\text{O}
+                                                            0.004, & ! {}^{14}\text{N}
+                                                            0.0996, & ! {}^{16}\text{O}
                                                             0.005, & ! {}^{20}\text{Ne}
+                                                            0.0004, & ! {}^{23}\text{Na}
                                                             0.005, & ! {}^{24}\text{Mg}
                                                             0.02, & ! {}^{28}\text{Si}
                                                             0.005, & ! {}^{32}\text{S}
                                                             0.007 & ! {}^{56}\text{Fe}
                                                             /) ! the isotopic abundances from Chris' notes, sourced from SNe sims: https://arxiv.org/abs/astro-ph/0112478
     double precision :: coupling_Array(14,2)
-    double precision :: W_array_super(8,9,2,2,7)
-    double precision :: yConverse_array_super(9)
+    double precision :: W_array_super(8,11,2,2,7)
+    double precision :: yConverse_array_super(11)
 
-    double precision :: mdm, rhoX, Mej, ISM, Dist, Esn, Age
+    double precision :: mdm, rhoX, Mej, ISM, Dist, Esn, Age, V_w, Mdot
+    integer :: novaType
 
     contains
 
@@ -57,10 +64,19 @@ module supermod
     implicit none
     double precision :: lam_FE, Lam_ST, R_0, t_0
         ! from Chris' notes
-        lam_FE = 4./7.
-        lam_ST = 2./5.
-        R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
-        t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)  ! include missing units of c to get t_0 in sec
+        if ( novaType == 1 ) then
+            lam_FE = 4./7.
+            lam_ST = 2./5.
+            R_0 = ((3*Mej) / (4*pi*ISM*1.27*mnuc))**(1./3.)
+            t_0 = R_0**(7./4.) * ((Mej*ISM*1.27*mnuc) / (0.38*Esn**2))**(1./4.)  ! include missing units of c to get t_0 in sec
+        else if ( novaType == 2 ) then
+            lam_FE = 6./7.
+            lam_ST = 2./3.
+            R_0 = Mej*V_w/Mdot
+            t_0 = R_0**(7./6.) * ( 9*Mdot/V_w * (18*Mej)**(2)/(40*Esn)**(3) )**(1./6.)
+        else
+            stop "novaType can only be 1 (type Ia) or 2 (type II)."
+        end if
     end subroutine novaParameters
 
     ! This gives you the radius of the SNe shockwave front as a function of time
@@ -98,6 +114,50 @@ module supermod
         ! Vshock = 1.
 
     end function Vshock
+
+    ! adapted the catpn GFFI so that the limits run from E=0 to E = 2 m_x * ( (m_i*V_s)/(m_i + m_x) )**2, and Ekin is now 1/2 m_i V_s^2, momentum is now p = m_i * V_s
+    function GFFI_H_oper(V_s, mq)
+        double precision :: GFFI_H_oper
+        double precision :: V_s
+        integer :: mq
+        double precision :: Emax!, p,  mu
+
+        ! p = mnuc * V_s
+        ! mu = mdm/mnuc
+        Emax = 2*mdm * ( (mnuc*V_s)/(mnuc + mdm) )**2
+
+        if (mq >= 0) then
+            ! GFFI_H_oper = (p**2 * mu)**mq * Ekin * 1./(1.+mq) * (Emax/Ekin)**(mq+1)
+            GFFI_H_oper = (2.d0 * mdm)**mq * Emax**(mq+1)/(mq + 1.d0)
+        else
+            stop "You cannot pass a negative integer to GFFI"
+        end if
+
+    end function GFFI_H_oper
+    
+    function GFFI_A_oper(V_s,A,mq)
+        double precision :: GFFI_A_oper
+        double precision :: V_s, A
+        integer :: mq
+        double precision :: Emax, mN, Ei!, p, mu
+        double precision :: dgamic
+        
+        ! p = mN * V_s
+        ! mu = mdm / (mN)
+        mN = A*mnuc
+        Emax = 2*mdm * ( (mN*V_s)/(mN + mdm) )**2
+        ! Ei = 1./4.d0/mN/264.114*(45.d0*A**(-1./3.)-25.d0*A**(-2./3.))
+        Ei = 9.39010d-4/mdm * (45.d0*A**(-1./3.)-25.d0*A**(-2./3.)) ! this is hbarc^2 / mdm * (1/b)^2, pulling b from page 10 of [arxiv:1501.03729]
+
+        if (mq == 0) then
+            GFFI_A_oper = Ei * (1.d0 - exp(-Emax/Ei))
+        else if (mq > 0) then
+            GFFI_A_oper = (2.d0 * mdm)**mq * Ei**(1 + mq) * (gamma(1.d0 + dble(mq)) - dgamic(1.+dble(mq), Emax/Ei))
+        else
+            stop "You cannot pass a negative integer to GFFI"
+        end if
+
+    end function GFFI_A_oper
 
 end module supermod
 
@@ -142,16 +202,16 @@ end subroutine populate_array_super
 ! jx_in: dark matter spin
 ! vel_in: dark matter final velocity in km s^{-1}
 !
-subroutine supercaptn(mx_in, jx_in, vel_in, niso, nradius, totalScattered)
+subroutine supercaptn(mx_in, jx_in, vel_in, niso, nradius, totalScattered, scatteringCheck)
     use supermod
     implicit none
     double precision, intent(in) :: mx_in, jx_in, vel_in
     integer, intent(in):: niso
-    double precision, intent(out) :: totalScattered !this is the output
+    double precision, intent(out) :: totalScattered, scatteringCheck !this is the output
 
     integer eli, funcType, tau, taup, term_R, term_W, q_pow, w_pow, radialIndex ! loop indicies
     double precision :: a, J, j_chi, mu_T, vel, time, V_s, R_s, V_max, R_max    ! parameters
-    double precision :: scattered, result, DsigmaDe    ! used to tally results
+    double precision :: scattered, result, DsigmaDe, N_i, sigma_i    ! used to tally results
 
     ! parameters used in prefactor calculation
     integer :: q_functype, q_index
@@ -176,6 +236,7 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, nradius, totalScattered)
 
     if (time .lt. 0.d0) then
         totalScattered = 0.d0
+        scatteringCheck = 0.d0
     else
         do eli = 1, niso
             do q_pow = 1, 11
@@ -296,11 +357,15 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, nradius, totalScattered)
             prevRadius = R_s_values(radialIndex-1)
 
             ! now with all the prefactors computed, any 0.d0 entries in prefactor_array means that we can skip that q^{2n} w^{2m} term
+            scatteringCheck = 0.d0
             scattered = 0.d0
             do eli=1,niso
 
                 a = AtomicNumber_super(eli)
                 J = AtomicSpin_super(eli)
+
+                sigma_i = 0.d0
+                N_i = MassFrac_super(eli)*Mej / (4*pi*mnuc*a*R_s**2)
 
                 result = 0.d0
 
@@ -318,20 +383,28 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, nradius, totalScattered)
                                 if ( eli .eq. 1 ) then ! we're doing Hydrogen which doesn't get an exponential in its W function fits
                                     result = result + prefactor_array(eli,q_pow,w_pow) *(mdm*vel)**(2*(q_pow-1)) &
                                         * (V_s)**(2*(w_pow-1))
+                                    sigma_i = sigma_i + prefactor_array(eli,q_pow,w_pow)*(V_s)**(2*(w_pow-1)) &
+                                        * GFFI_H_oper(V_s,q_pow-1)!(mdm*vel)**(2*(q_pow-1)) STUFF FROM GFFI
                                 else
                                     result = result + prefactor_array(eli,q_pow,w_pow) *(mdm*vel)**(2*(q_pow-1)) &
                                         * (V_s)**(2*(w_pow-1)) * exp(-2*yConverse_array_super(eli)*(mdm*vel)**2)
+                                    sigma_i = sigma_i + prefactor_array(eli,q_pow,w_pow)*(V_s)**(2*(w_pow-1)) &
+                                        * GFFI_A_oper(V_s,a,q_pow-1)!(mdm*vel)**(2*(q_pow-1)) * exp(-2*yConverse_array_super(eli)*(mdm*vel)**2) STUFF FROM GFFI
                                 end if
                             end if
                         end do !q_pow
                     end do !w_pow
 
                     DsigmaDe = result * (2. * mdm*c0**2)/(V_s**2 * (2*J+1))
+                    sigma_i = sigma_i * (2. * mdm*c0**2)/(V_s**2 * (2*J+1))
 
                     scattered = scattered + (Mej*MassFrac_super(eli))/(a*mnuc) * DsigmaDe
                     if ( eli.eq.1 ) then
                         scattered = scattered + 4./3.*pi*R_max**3*ISM*c0**2 * DsigmaDe ! should R_shock -> R_max?
                     end if
+
+                    scatteringCheck = scatteringCheck + N_i*sigma_i
+
                 end if
             end do !eli
             ! Want to multiply the number of DM scattered particles to vel from VShock (scattered) by the number of shockwave particles moving at that velocity
@@ -347,40 +420,49 @@ subroutine supercaptn(mx_in, jx_in, vel_in, niso, nradius, totalScattered)
             totalScattered = totalScattered + scattered
         end do !radialIndex
 
+        if ( scatteringCheck > 1.d0 ) then
+            scattered = scattered / (2*scatteringCheck)
+            ! print*, "Scattering opacity check is greater than 1.0:", scatteringCheck
+        end if
+
         totalScattered = totalScattered/hbarc**3 !recover units
 
     end if !End condition on t > 0
 
 end subroutine supercaptn
 
-subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in)
+subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in, novaTypeChosen, V_w_in, Mdot_in)
     ! input velocities in km/s, not cm/s!!!
     use supermod
     implicit none
-    double precision, intent(in) :: rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in
+    double precision, intent(in) :: rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in, V_w_in, Mdot_in
+    integer, intent(in) :: novaTypeChosen
 
     integer :: i, j, k, l, m
     character (len=2) :: terms(7) = [character(len=2) :: "y0", "y1", "y2", "y3", "y4", "y5", "y6"]
     real :: WM, WS2, WS1, WP2, WMP2, WP1, WD, WS1D
 
     ! load values into module
-    rhoX = rhoX_in*hbarc**3 ! loaded in GeV cm^{-3} -> GeV^4
-    Mej = Mej_in * kg_SolarM * GeV_kg ! convert Solar Masses to kg to GeV c^{-2}
-    ISM = ISM_in*hbarc**3 ! loaded in cm^{-3}
-    Dist = Dist_in * cm_parsec / hbarc ! convert pc to cm to GeV^-1
-    Age = Age_in*year/hbar !GeV^-1
-    Esn = Esn_in * GeV_ergs ! convert ergs to GeV
+    rhoX = rhoX_in*hbarc**3 ! loaded in GeV cm^{-3} -> GeV^{4}
+    Mej = Mej_in * kg_SolarM * GeV_kg ! loaded in Solar Masses -> kg -> GeV
+    ISM = ISM_in*hbarc**3 ! loaded in cm^{-3} -> GeV^{3}
+    Dist = Dist_in * cm_parsec / hbarc ! loaded in pc -> cm -> GeV^{-1}
+    Age = Age_in*year/hbar ! loaded in years -> seconds -> GeV^{-1}
+    Esn = Esn_in * GeV_ergs ! loaded in ergs -> GeV
+    V_w = V_w_in * 100000 / c1 ! loaded in km/s -> cm/s -> unitless
+    Mdot = Mdot_in * kg_SolarM * GeV_kg / year * hbar ! loaded in MSun/yr -> kg/yr -> GeV/yr -> GeV/s -> GeV^{2}
 
+    novaType = novaTypeChosen
     ! mass fraction is given by MassFrac_super, from SNe sims
     ! it doesn't vary with a radial coordinate, so it is only a fixed frac per isotope
 
     ! this array stores each of the constants of the W polynomials from paper arxiv:1501.03729's appendix individually
-    ! array index m handles the 8 varients of the W functions in order [M, S", S', P", MP", P', Delta, S'Delta]
-    ! index i handles the 9 isotopes [H, He4, C12, O16, Ne20, Mg24, Si28, S32, Fe56]
+    ! array index m handles the 8 variants of the W functions in order [M, S", S', P", MP", P', Delta, S'Delta]
+    ! index i handles the 11 isotopes [H, He4, C12, N14, O16, Ne20, Na23, Mg24, Si28, S32, Fe56]
     ! index j & k handle the two superscripts for each W function, each taking values of 0 and 1
     ! index L determines the power of each constant ranging from y^0 to y^6
     do m=1,8
-        do i=1,9
+        do i=1,11
             do j=1,2
                 do k=1,2
                     do l=1,7
@@ -413,7 +495,7 @@ subroutine supercaptn_init(rhoX_in, Mej_in, ISM_in, Dist_in, Esn_in, Age_in)
                                 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0, 0d0/), (/14, 2/))
 
     ! yconv comes from arxiv:1501.03729 page 10, where yconv = (b/{2 hbar c})^2
-    do i = 1, 9
+    do i = 1, 11
         yConverse_array_super(i) = 264.114/(45.d0*AtomicNumber_super(i)**(-1./3.)-25.d0*AtomicNumber_super(i)**(-2./3.))
     end do
 end subroutine supercaptn_init
