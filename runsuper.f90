@@ -20,7 +20,7 @@ program RunSuper
     filename = "test.dat" ! the file you want to write to
 ! Velocity range
     velInit = 4300.00    ! starting velocity [km s^-1]
-    velFinal = 4500.00   ! ending velocity [km s^-1]
+    velFinal = 4600.00   ! ending velocity [km s^-1]
     velNum = 10000       ! integer number of velocity steps
 !-----------------------------------------------------------------------------------------------------------------------------------
 ! Dark matter parameters
@@ -69,7 +69,7 @@ program RunSuper
     ejecta_Mass = 5. ! m_Sun
     ISM_Density = 3.73d-3 ! cm^{-3}
     dist_SN = 300. ! pc
-    energy_SN = 8.d50 ! erg
+    energy_SN = 8.38d50 ! erg
     age_SN = 6.8d4 ! years
     novaTypeSelection = 2 ! 1:type Ia (old) 2:type II (new)
     stellar_wind_vel = 10. ! km s^{-1}
@@ -98,9 +98,12 @@ program RunSuper
     write(55, *) "Dark matter density [GeV cm^-3]: ", dm_Density, &
                     " | ISM density [cm^-3]: ", ISM_Density, &
                     " | SN ejecta mass [M_Sun]: ", ejecta_Mass, &
-                    " | SN distance [pc]: ", dist_SN, &
                     " | SN energy [erg]: ", energy_SN, &
-                    " | SN age [tropical years]: ", age_SN
+                    " | SN distance [pc]: ", dist_SN, &
+                    " | SN age [tropical years]: ", age_SN, &
+                    " | SN type [1: TypeIa, 2: TypeII]: ", novaTypeSelection, &
+                    " | Stellar wind velocity [km s^-1]: ", stellar_wind_vel, &
+                    " | Stellar mass loss rate [M_Sun yr^-1]: ", stellar_mass_loss
     write(55,*) "Dark matter mass [GeV]: ", dm_Mass, &
                 " | Dark matter spin [unitless]: ", dm_Spin
     write(55,*) "The NREO couplings in use: "
