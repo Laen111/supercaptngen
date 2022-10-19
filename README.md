@@ -2,7 +2,7 @@
 
 Super Capt'n General: fork of [Capt'n General](https://github.com/aaronvincent/captngen), designed to handle supernovae boosting dark matter via elastic scattering to above galactic escape velocities.
 
-If you use this code, you can cite [arXiv:xxxx.yyyyy](https://arxiv.org/abs/xxxx.yyyyy) where it was first deployed.
+If you use this code, you can cite [arXiv:2210.09448](https://arxiv.org/abs/2210.09448) where it was first deployed.
 
 Run `make` to compile the library on its own.
 
@@ -20,18 +20,18 @@ The structure of the `runsuper.f90` main file is as follows:
 You can use $c_i^\tau \approx \sqrt{4\pi\sigma}\,/\,(\mu\hbar c)$ to get a rough translation from cross section to coupling.
 Also, any combination of couplings can be run at once, including the isoscalar and isovector ones.
 1. Finally, the option to change the supernova parameters, including the local dark matter density, the ejecta mass, the local Interstellar Medium (ISM) density, the distance to the supernova, the total energy released by the supernova, the age of the supernova, the supernova type (either 1 for a TypeIa, 2 for TypeII), the pre-supernova stellar wind, and the pre-supernova stellar mass loss rate.
-The values we used can be found in [arXiv:xxxx.yyyyy](https://arxiv.org/abs/xxxx.yyyyy).
+The values we used can be found in [arXiv:2210.09448](https://arxiv.org/abs/2210.09448).
 1. The rest of the script calls and runs Super Capt'n General.
 Feel free to modify it to suit your needs.
 
 ## Modifying `supercap.f90`
 
-To facilitate modification of the code that performs the velocity calculation, it is summarized here.
+To facilitate modification of the code that performs the velocity calculation, it is summarised here.
 
 ### `supercaptn_init`:
 
 The first function call is made to `supercaptn_init`.
-This function initializes some data for the actual calculations.
+This function initialises some data for the actual calculations.
 It loads in all input values and converts to internal _natural units_.
 It also loads the choice of nova into a shared variable that can be read later.
 It then loads all the constants of the _W functions_ ($W_{m}^{\tau\tau^\prime}(y)$) (see [arXiv:1501.03729](https://arxiv.org/abs/1501.03729)) into an array to be quickly read out during calculation.
